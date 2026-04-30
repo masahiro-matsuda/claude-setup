@@ -171,6 +171,10 @@ Write-INFO "Generating Prisma client..."
 npx prisma generate
 Write-OK "prisma generate done"
 
+Write-INFO "Running database migrations..."
+npx prisma migrate deploy
+Write-OK "prisma migrate deploy done"
+
 Write-INFO "Seeding database..."
 npx prisma db seed
 Write-OK "prisma db seed done"
