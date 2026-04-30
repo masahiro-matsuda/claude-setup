@@ -3,7 +3,7 @@
 #   Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 #   & "$env:USERPROFILE\Downloads\setup_home_pc.ps1"
 
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = "Continue"
 $ProgressPreference = "SilentlyContinue"
 
 function Write-Step($msg) {
@@ -111,7 +111,9 @@ if (Test-Path "$claudeDir\.git") {
     git -C $claudeDir init
     git -C $claudeDir remote add origin https://github.com/masahiro-matsuda/claude-config.git
     git -C $claudeDir fetch origin
+    $prev = $ErrorActionPreference; $ErrorActionPreference = "SilentlyContinue"
     git -C $claudeDir checkout -b main --track origin/main 2>$null
+    $ErrorActionPreference = $prev
     git -C $claudeDir reset --hard origin/main
     Write-OK "claude-config restored"
 } else {
