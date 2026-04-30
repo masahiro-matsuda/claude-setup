@@ -185,7 +185,7 @@ Write-OK "prisma db seed done"
 Write-Step "STEP 7: Install MCP server npm packages"
 
 Write-INFO "Installing playwright-mcp..."
-npm install -g @executeautomation/mcp-playwright
+npm install -g @playwright/mcp
 Write-OK "playwright-mcp installed"
 
 Write-INFO "Installing mysql-mcp..."
