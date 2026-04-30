@@ -195,13 +195,13 @@ Write-Step "STEP 8: Install email-assistant Python dependencies"
 
 $emailMcpDir = "$env:USERPROFILE\.claude\mcp-servers\email-assistant"
 if (Test-Path "$emailMcpDir\requirements.txt") {
-    pip install -r "$emailMcpDir\requirements.txt"
+    python -m pip install -r "$emailMcpDir\requirements.txt"
     Write-OK "email-assistant dependencies installed"
 } else {
     Write-INFO "requirements.txt not found (skipping)"
 }
 
-pip install keyring 2>$null
+python -m pip install keyring
 Write-OK "keyring installed"
 
 # ============================================================
