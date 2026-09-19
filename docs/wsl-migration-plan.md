@@ -66,26 +66,27 @@
 - [x] `init-project-claude-md` スキル STEP 5 に `.gitattributes` を追加
 - 発見: WSL から見ると `apps/.claude/`・`apps/meetings/.claude/`（em-tech-apps）と `.claude/`（vuln-mgmt）が未追跡に見える。原因＝Windows の全体除外 `~/.config/git/ignore`（`**/.claude/settings.local.json`）が WSL に無い → 段階2の git 設定で解消
 
-## 段階2: WSLの土台
+## 段階2: WSLの土台 ✅ 2026-09-19 完了（Docker 統合・VS Code 拡張は松田さんの操作）
 
-WSL側は `wsl -d Ubuntu -u root -- bash -lc "<cmd>"`（管理者）／`wsl -d Ubuntu -- bash -lc "<cmd>"`（通常）。
+WSL側は `wsl -d Ubuntu -u root -- bash <script>`（管理者）／`wsl -d Ubuntu -- bash -lc "<cmd>"`（通常）。**Git Bash から wsl.exe に `/mnt/c/...` を渡すときは `MSYS_NO_PATHCONV=1` を付ける**（付けないと Windows のパスに読み替えられて「No such file」になる）。手順はスクリプトファイルに書いて渡す（引用符の入れ子で崩れない）。
 
-- [ ] `/etc/wsl.conf` に `[automount]` `options="metadata"` を追加（既存の `[boot] systemd=true`・`[user] default=m-matsuda` は残す）
-- [ ] `apt install -y python-is-python3 python3-pip gh`
-- [ ] `~/.profile` の末尾に nvm の3行（`.bashrc` 119〜121行と同じ `export NVM_DIR`／`nvm.sh`／`bash_completion`）→ `bash -lc "which node corepack"` が `~/.nvm/...` を返す（足す前は apt の `/usr/bin/node`）
-- [ ] claude: 公式インストーラ `curl -fsSL https://claude.ai/install.sh | bash`（`~/.local/bin/claude`・node 不要・自分で更新する）→ `ln -s /home/m-matsuda/.local/bin/claude /usr/local/bin/claude`（非ログインシェルでも Windows 版 `/mnt/c/.../npm/claude` より先に見つかる）→ `bash -c "claude --version"` が Linux 版を返す → nvm 内の npm 版は `npm uninstall -g @anthropic-ai/claude-code`（対話シェルでは nvm の bin が先に来るため残すと二重になる）
-- [ ] git（通常ユーザー）: `user.name m-matsuda` / `user.email 61611032+masahiro-matsuda@users.noreply.github.com` / `core.quotepath false` / `credential.helper "/mnt/c/Program\ Files/Git/mingw64/bin/git-credential-manager.exe"`（Microsoft 公式手順。Windows のログインを流用）/ `~/.config/git/ignore` を Windows と同じ内容（`**/.claude/settings.local.json`）で作る（無いと WSL だけ `.claude/` が未追跡に見える。段階1で発見）
-- [ ] `gh auth login --with-token`（トークンは `gh.exe auth token` の出力を直接パイプ。ファイルに書かない）
-- [ ] `corepack enable && corepack prepare pnpm@9.15.4 --activate`（`~/.profile` を足した後・nvm の node で。apt の corepack は root 所有の場所に書こうとして失敗する）
-- [ ] `~/.ssh/config`: Windows側の2ホスト（鍵 `C:/Data/key/sakura_sys.em-tech.co.jp/id_rsa`・`C:/Users/m-matsuda/.ssh/cybozu_archive`）＋ `apps.em-tech.co.jp`（`/mnt/c/data/key/apps.em-tech.co.jp/id_ed25519`）を `/mnt/c/...` 表記で。`known_hosts` を写す
-- [ ] Claude Code プラグイン `typescript-lsp`・`pyright-lsp` を WSL 側にも
-- [ ] **`wsl --shutdown`**（PowerShell から。WSL の全セッションが落ちる）→ 再起動後 `chmod 600` が `/mnt/c` で効くことを確認 → `chmod 600 /mnt/c/data/key/*/id_*`。NTFS で読み取り専用の2本（apps・sakura）が拒否されたら判断④
+- [x] `/etc/wsl.conf` に `[automount]` `options="metadata"` を追加（既存の `[boot]`・`[user]` は残した）
+- [x] `apt install python-is-python3 python3-pip gh` → Python 3.14.4／pip 25.1.1／gh 2.46.0
+- [x] `~/.profile` の末尾に nvm の3行 → `bash -lc` で node 22.23.2・corepack・pnpm が nvm 側になった
+- [x] claude: 公式インストーラ → `~/.local/bin/claude`（2.1.277）→ `/usr/local/bin/claude` にリンク → `bash -c "claude --version"` も Linux 版。nvm 内の npm 版は `npm uninstall -g` で撤去
+- [x] git（通常ユーザー）: user.name／user.email／`core.quotepath false`／`credential.helper` = Windows の GCM／`~/.config/git/ignore` を Windows と同じ内容で作成 → `git ls-remote` で非公開リポジトリに認証付きで届いた
+- [x] gh: `gh auth login --with-token` は**トークンを `~/.config/gh/hosts.yml` に平文で保存する**（ルール20 に反する）ので取りやめ。代わりに `~/.profile` で毎回 `gh.exe auth token` の出力を `GH_TOKEN` に載せる（ファイルに残らない）。`gh auth status` は「GH_TOKEN でログイン済み」
+- [x] `corepack enable && corepack prepare pnpm@9.15.4 --activate` → pnpm 9.15.4
+- [x] `~/.ssh/config`: ONE／cybozu-archive／apps.em-tech.co.jp（`emtech@153.127.65.67`・apps-prod-deploy-playbook の接続先）。`known_hosts` を写した
+- [x] Claude Code プラグイン `typescript-lsp`・`pyright-lsp` を WSL 側に導入（`claude plugin install`）
+- [x] 再起動は `wsl --shutdown` でなく **`wsl --terminate Ubuntu`**（Ubuntu だけ再起動。Docker Desktop と他のディストロは落ちない）→ `metadata` が効き、`chmod 600` が通った（pegasus の鍵・cybozu_archive）
+- [x] **判断④は不要になった**: apps・sakura の鍵2本は NTFS のアクセス権が読み取りだけ（読み取り専用属性ではない。PowerShell からの属性変更も拒否）で `chmod` が拒否される → 複製もアクセス権変更もせず、**鍵フォルダを `umask=077,fmask=077` で `/mnt/key` に別 mount**（`/etc/fstab` に `C:\data\key /mnt/key drvfs uid=1000,gid=1000,umask=077,fmask=077 0 0`）。所有者以外のビットが消えて `400` に見え、ssh が受け付ける（`ssh-keygen -y` で読めた）。ssh 設定の `IdentityFile` は `/mnt/key/...`。実体は Windows 側のまま
 - [ ] 松田さんの操作: Docker Desktop → Settings → Resources → WSL integration → Ubuntu を ON → `wsl -d Ubuntu -- docker info` が通る → `wsl -d Ubuntu -- docker ps -a` に Windows 側と同じコンテナ（`schedule-postgres-1` 等）が見える
 - [ ] 松田さんの操作: VS Code に「WSL」拡張（ms-vscode-remote.remote-wsl）
 
-## 段階3: Claude Code 設定の1本化
+## 段階3: Claude Code 設定の1本化 ✅ 2026-09-19 完了（3-4 の Terminal は段階4の複製後）
 
-### 3-1. リンク（WSL側 → Windows側）
+### 3-1. リンク（WSL側 → Windows側）✅
 
 | WSL側 | → Windows側 | 理由 |
 |---|---|---|
@@ -97,32 +98,33 @@ WSL側は `wsl -d Ubuntu -u root -- bash -lc "<cmd>"`（管理者）／`wsl -d U
 | `~/claude code` | `/mnt/c/Users/m-matsuda/claude code` | `~/claude code/...` を両側で通す |
 
 リンクしない: `projects/` 配下のセッションログ、`sessions/` `session-env/` `shell-snapshots/` `cache/` `history.jsonl` `.credentials.json` `.context-usage.*` `.compact-handoff.*` `plugins/`。
-WSL側の既存 `settings.json`（`{"model":"claude-fable-5-1[1m]","modelSettings":{"claude-opus-5":{"effortLevel":"xhigh"}},"theme":"dark"}`）はリンクで置き換わる。**Windows 側の正本にも 2026-09-19 の `/model` で `claude-fable-5-1[1m]` 既定と opus・fable の xhigh が保存されている**ので、1本化後は両側でその値が効く（判断⑦）。
+WSL側の元の `settings.json`（Fable 5.1・opus xhigh・theme dark）は `settings.json.wsl-old-20260919` として残した。**Windows 側の正本にも 2026-09-19 の `/model` で `claude-fable-5-1[1m]` 既定と opus・fable の xhigh が保存されている**ので、1本化後は両側でその値が効く（判断⑦）。`theme: dark` は共有側に無いので WSL は既定のテーマになる（必要なら `/config` で）。
 
-### 3-2. `settings.json`（Windows側の正本）を両側で通る形に
+### 3-2. `settings.json`（Windows側の正本）を両側で通る形に ✅
 
-| 対象 | 今 | 直し |
+| 対象 | 前 | 後 |
 |---|---|---|
-| `fix-ps1-encoding.py` `knowledge_inbox_notify.py` `statusline.py` | `python "C:\Users\...\x.py"` | `python "$HOME/.claude/.../x.py"`（他10本が既にこの形） |
-| `session-start.ps1` `session-digest.ps1` | `powershell -File "C:\..."` | `powershell.exe -File "C:\..."`（パスはそのまま。どちらから呼んでも Windows で走る） |
-| `packages-lag-check.js` | 全体設定に `$HOME/claude code/dev/em-tech-apps/...` | em-tech-apps の `.claude/settings.json` へ移す（`$CLAUDE_PROJECT_DIR`） |
+| `fix-ps1-encoding.py` `knowledge_inbox_notify.py` `recall-relevant.py` `statusline.py` | `python "C:\Users\...\x.py"` | `python "$HOME/.claude/.../x.py"`（他10本と同じ形） |
+| `session-start.ps1` `session-digest.ps1` | `powershell -File "C:\..."` | `powershell.exe -File "C:\..."`（パスはそのまま。WSL から呼んでも Windows で走る＝実測で自動リコールが出た） |
+| `packages-lag-check.js` | `$HOME/claude code/dev/em-tech-apps/...` | `$HOME/dev/em-tech-apps` → `$HOME/claude code/dev/em-tech-apps` の順に探す1行（作業場のブランチが main を取り込むまで個人設定に置く理由は変わらないので、リポジトリ側へは移さない） |
 | `env` `permissions` `outputStyle` `statusLine` | ─ | そのまま共有 |
 
-直後に **Windows側で** PowerShell の Claude を起動し、フックが従来どおり動くことを確認する。
+書き換えは Python で JSON を読み書きし、読み直して検証（ルール: コミット内容を実際にパースする）。**Windows 側で従来どおり動くことをコマンド単位で確認済み**（Git Bash で4本の Python フック・新しい1行・`powershell.exe` 形式）。新しい PowerShell セッションでフックが配線どおり動くかは、次に PowerShell の Claude を起動したときに見る。
 
-### 3-3. スクリプト修正
+### 3-3. スクリプト修正 ✅
 
-- [ ] `hooks/recall-relevant.py`: `USERPROFILE` が無ければ `HOME`（1行）
-- [ ] `lib/session-digest.ps1`: `cwd` が `/` 始まりならセッションログを `\\wsl.localhost\Ubuntu\home\m-matsuda\.claude\projects\...` から探す（数行）。**これが無いと WSL の会話が外部脳に残らない**
-- [ ] `tools/knowledge_inbox_notify.py`: `C:\Users\...` 直書きを `~/claude code/...` 由来に
-- [ ] `tools/nightly_knowledge_backfill.py`（夜間の知見抽出）: WSL セッションのログ（`\\wsl.localhost\Ubuntu\home\m-matsuda\.claude\projects\-home-m-matsuda-dev-em-tech-apps\`）も読めるようにする。**digest の1行だけ直しても、本文を読む後段が WSL を探せなければ知見に残らない**（ログの探し方は着手時に読んで確かめる）
-- [ ] （任意）obsidian MCP 2本を WSL 側 `~/.claude.json` に登録（`mcp-setup` スキル。Vault は `/mnt/c/Users/m-matsuda/claude-vault`）。記憶の読み書きはファイル経由なので無くても動く
+- [x] `hooks/recall-relevant.py`: `USERPROFILE` が無ければ `HOME`（2か所）
+- [x] `lib/session-digest.ps1`: **変更不要**と判明。cwd と session_id を1行書くだけで会話本文は読まない。WSL から `powershell.exe` 経由で呼んでも Windows 側の `_inbox/session-log.md` に書ける
+- [x] `tools/knowledge_inbox_notify.py`: `C:\Users\...` 直書きを `~/claude code/...` 由来に（WSL は `~/claude code` のリンク経由で同じ実体）
+- [x] `tools/chat_knowledge_extract.py`（夜間の知見抽出の入力）: 走査対象に `\\wsl.localhost\Ubuntu\home\m-matsuda\.claude\projects` を追加。同じキー名は最初の1つだけ採る（WSL 側の `c--Users-...` は Windows へのリンクなので二重に読まない）。`\\wsl.localhost\` を触ると停止中の Ubuntu も起動するので夜間でも読める
+- [x] WSL 側で全フックを試験入力で起動 → 全部動いた（サブエージェントのモデル未指定を止める判定 rc=2 も期待どおり）
+- [ ] （任意・見送り）obsidian MCP 2本の WSL 登録。記憶の読み書きはファイル経由なので無くても動く
 
-### 3-4. Windows Terminal（`~/.claude/tools/claude-shortcuts.ps1 add`）
+### 3-4. Windows Terminal（`~/.claude/tools/claude-shortcuts.ps1 add`）— 段階4の複製後に実施
 
 - [ ] 「Claude: em-tech-apps（WSL）」: `-Path \\wsl.localhost\Ubuntu\home\m-matsuda\dev\em-tech-apps` `-Command 'wsl.exe -d Ubuntu --cd /home/m-matsuda/dev/em-tech-apps -- bash -lc "claude; exec bash -i"'`（`-lc`＝ログインシェルで `~/.profile` の nvm を読む。`-c` だと node・pnpm が apt 側になる）
 - [ ] 「Claude: アプリ質問対応（速い・WSL）」: 同上に `claude --model sonnet`
-- [ ] 既存の PowerShell 版「Claude: em-tech-apps」「Claude: アプリ質問対応（速い）」は `remove`（Windows側の写しを誤って開かないため）
+- [ ] 既存の PowerShell 版「Claude: em-tech-apps」「Claude: アプリ質問対応（速い）」は**段階6の改名時に** `remove`（それまでは Windows 側が正本）
 - [ ] 親フォルダ用の WSL プロファイルは作らない（業務系は PowerShell の役割）
 
 ## 段階4: リポジトリ移設
@@ -186,7 +188,7 @@ Office 操作（doc-extract・excel-dynamic-extraction・styled-pptx の描画�
 | ① | inside-sales-automation を移すか | 推奨どおり第2波（em-tech-apps 安定後） |
 | ② | 自宅PCにも WSL を入れるか | 推奨どおり `setup_wsl.sh` を作る。導入は松田さん |
 | ③ | Windows側の写しの削除 | 冷却2週間後に再確認 |
-| ④ | SSH鍵: 読み取り専用2本が `chmod` 拒否なら `~/.ssh` へ複製してよいか（ルール20B の例外） | 起きたら聞く |
+| ④ | SSH鍵: 読み取り専用2本が `chmod` 拒否なら `~/.ssh` へ複製してよいか（ルール20B の例外） | **不要になった（2026-09-19）**: 鍵フォルダの別 mount（`/mnt/key`・umask=077）で解決。複製なし・アクセス権変更なし（段階2） |
 | ⑤ | Defender の除外（`ext4.vhdx`） | **保留** |
 | ⑥ | 未追跡9件: PDF2本はコミットか／jpeg 3枚・diff1〜4.txt は削除か | **決定（2026-09-19）**: PDF はコミット、jpeg・diff は削除。ccguide 作業場の `dev.db.bak-20260815` も削除 |
 | ⑦ | 既定モデル・effort（settings.json の1本化） | **前提が変わった（2026-09-19）**: Windows 側の正本に `/model` で `claude-fable-5-1[1m]` 既定と opus・fable の xhigh が保存済み。1本化後は両側でこの値が効く。**新機能7件の試用が終わったらルール24へ戻す**（`model` を消し effort を high） |
@@ -213,3 +215,4 @@ Office 操作（doc-extract・excel-dynamic-extraction・styled-pptx の描画�
 
 - 2026-09-19 段階0 完了（WSL セッション dfc968a3）。以降は PowerShell 側のセッションで実行。
 - 2026-09-19 PowerShell 側セッションで計画を実機と突き合わせ、抜け13件を反映（nvm が非対話で読まれない／`.env` の Windows パス／gitignore 対象の写し／作業場の破損／同期チェック／夜間の知見抽出／Windows 側から読む役／判断⑦の前提／Playwright の root／保険の push／作業場の偽差分／`i/mixed`／判断⑥の決定）。
+- 2026-09-19 段階1〜3 完了（段階2の Docker 統合・VS Code 拡張は松田さんの操作待ち、3-4 の Terminal は段階4の複製後）。
