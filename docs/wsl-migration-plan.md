@@ -81,8 +81,8 @@ WSL側は `wsl -d Ubuntu -u root -- bash <script>`（管理者）／`wsl -d Ubun
 - [x] Claude Code プラグイン `typescript-lsp`・`pyright-lsp` を WSL 側に導入（`claude plugin install`）
 - [x] 再起動は `wsl --shutdown` でなく **`wsl --terminate Ubuntu`**（Ubuntu だけ再起動。Docker Desktop と他のディストロは落ちない）→ `metadata` が効き、`chmod 600` が通った（pegasus の鍵・cybozu_archive）
 - [x] **判断④は不要になった**: apps・sakura の鍵2本は NTFS のアクセス権が読み取りだけ（読み取り専用属性ではない。PowerShell からの属性変更も拒否）で `chmod` が拒否される → 複製もアクセス権変更もせず、**鍵フォルダを `umask=077,fmask=077` で `/mnt/key` に別 mount**（`/etc/fstab` に `C:\data\key /mnt/key drvfs uid=1000,gid=1000,umask=077,fmask=077 0 0`）。所有者以外のビットが消えて `400` に見え、ssh が受け付ける（`ssh-keygen -y` で読めた）。ssh 設定の `IdentityFile` は `/mnt/key/...`。実体は Windows 側のまま
-- [ ] 松田さんの操作: Docker Desktop → Settings → Resources → WSL integration → Ubuntu を ON → `wsl -d Ubuntu -- docker info` が通る → `wsl -d Ubuntu -- docker ps -a` に Windows 側と同じコンテナ（`schedule-postgres-1` 等）が見える
-- [ ] 松田さんの操作: VS Code に「WSL」拡張（ms-vscode-remote.remote-wsl）
+- [x] 松田さんの操作: Docker Desktop の WSL 統合を Ubuntu で ON（2026-09-19 12:05）→ `docker info`（server 29.6.2・コンテナ13本）→ `docker ps -a` に Windows 側と同じコンテナが見えた。**統合の Apply & restart で Docker が再起動し、Up だった3本（schedule-postgres-1・hr-ledger-test・emtech_system_live-db-1）が止まった → `docker start` で戻した**
+- [x] 松田さんの操作: VS Code に「WSL」拡張（2026-09-19）
 
 ## 段階3: Claude Code 設定の1本化 ✅ 2026-09-19 完了（3-4 の Terminal は段階4の複製後）
 
@@ -124,14 +124,14 @@ WSL側の元の `settings.json`（Fable 5.1・opus xhigh・theme dark）は `set
 
 - [ ] 「Claude: em-tech-apps（WSL）」: `-Path \\wsl.localhost\Ubuntu\home\m-matsuda\dev\em-tech-apps` `-Command 'wsl.exe -d Ubuntu --cd /home/m-matsuda/dev/em-tech-apps -- bash -lc "claude; exec bash -i"'`（`-lc`＝ログインシェルで `~/.profile` の nvm を読む。`-c` だと node・pnpm が apt 側になる）
 - [ ] 「Claude: アプリ質問対応（速い・WSL）」: 同上に `claude --model sonnet`
-- [ ] 既存の PowerShell 版「Claude: em-tech-apps」「Claude: アプリ質問対応（速い）」は**段階6の改名時に** `remove`（それまでは Windows 側が正本）
+- [x] 既存の PowerShell 版「Claude: em-tech-apps」「Claude: アプリ質問対応（速い）」を `remove`（段階6・2026-09-19）
 - [ ] 親フォルダ用の WSL プロファイルは作らない（業務系は PowerShell の役割）
 
 ## 段階4: リポジトリ移設 ✅ 2026-09-19 完了
 
 - [x] 棚卸し（Windows側 git）: ブランチ30本・作業場5つ・stash 0。ccguide 作業場の未コミット1件＝`apps/ccguide/prisma/dev.db.bak-20260815`（8/15 の開発DBの控え）を削除
 - [x] 未追跡9件（判断⑥）: `apps/schedule/docs/*.pdf` 2本をコミット `5adb8a30`、`cct-*.jpeg` 3枚と `diff1〜4.txt` を削除 → Windows 側の未コミット 0
-- [ ] **保険の push（y/n・松田さん）**: main（41件先行）と全ブランチ（ccguide 592・schedule-p6 314・board 73・meetings-zero-redesign 39・追跡先なし19本）を GitHub へ。段階6の改名の前までに
+- [x] **保険の push**（2026-09-19 承認・WSL から `git push -u origin --all`・em-tech-apps 30本・apps-platform 7本すべて GitHub と差なし）。元の案＝main（41件先行）と全ブランチ（ccguide 592・schedule-p6 314・board 73・meetings-zero-redesign 39・追跡先なし19本）を GitHub へ。段階6の改名の前までに
 - [x] `git clone`（Windows のローカルから）→ 30本のブランチを取り込み → `remote set-url origin` を GitHub に → `fetch --prune` → **ブランチ 30 本・差分 0・HEAD は Windows と同じ**。`.git` は 27MB
 - [x] `.env` 9本を写して `chmod 600`（`apps/board|ccguide|cct|meetings|schedule|tasks|visit|workflow/.env`・`apps/isms/.env.local`。診断の「10本」は `.env.bak` を数えていた）。`apps/workflow/.env` の `GOOGLE_APPLICATION_CREDENTIALS` は `/mnt/key/...` に書き換え
 - [x] gitignore 対象で要るものを写した: SQLite の開発DB 3本・`apps/workflow/uploads/`（2.0M）・`apps/kintai/docs/管理部門資料/`（1.8M）・`apps/ccguide/docs/ads/`（1.2M）・同 `セキュリティ委員会_検討事項_2026-08.md`・`apps/tasks/docs/briefing/`・`apps/schedule/tmp/`。Postgres のデータは Docker の名前付きボリュームに在るので写さない
@@ -153,10 +153,10 @@ WSL側の元の `settings.json`（Fable 5.1・opus xhigh・theme dark）は `set
 - [x] フック: 試験入力で全フックが動いた（サブエージェントのモデル未指定を止める判定は rc=2 で期待どおり／語彙チェック／引継書の各フック／ステータス行／自動リコール＝`powershell.exe` 経由で Windows 側が走る）
 - [x] WSL セッションの終了で Windows 側 `_inbox/session-log.md` に1行増えた（`cwd=/home/m-matsuda/dev/em-tech-apps`）
 - [x] `git status` が本物の変更だけ（0件）。push は段階4の保険 push に統合
-- [ ] `docker build` が通り、PowerShell 側の `docker images` からも見える（**Docker Desktop の WSL 統合 ON のあと**）
-- [ ] アプリ1つ（schedule）で `docker compose up -d` → `docker ps` に Windows 側と同じコンテナ名 → `localhost:<ポート>` に届き、既存データが見える（同上）
+- [x] `docker build`（training・`--build-arg BASE_PATH=/training`）が WSL の bash で通り、PowerShell 側の `docker images` からも見えた（416MB。確認後に削除）
+- [x] schedule で `docker compose -f docker-compose.dev.yml up -d` → 同じコンテナ `schedule-postgres-1`（55434）→ WSL から `localhost:55434` に届き、DB `schedule` の表 35・予定 9 件が見えた。**`compose.yaml` は本番用（`/opt/apps/schedule/.env` を要求）なので開発では `docker-compose.dev.yml` を使う**
 - [x] `pnpm dev`（training・4100。ccguide は main の `dev.db` が schema より古く `securityVersion` 列が無いため起動直後に落ちる＝WSL の問題ではなく開発DBの鮮度。新しい DB は `C:\wt\ccguide` 側）→ Windows の `curl localhost:4100` が 200（0.1秒・WSL2 の localhost 転送）→ **WSL 側でファイルを変えた直後の要求だけ再コンパイルが走った**（変更なしの再要求では走らない）＝変更検知 OK
-- [ ] `ssh apps.em-tech.co.jp true`（y/n・松田さん）
+- [x] `ssh apps.em-tech.co.jp true`（2026-09-19 承認）→ rc=0。WSL から鍵 `/mnt/key/...` で本番に入れる
 - [x] `python.exe` 経由で Windows の資格情報マネージャーに届く（`WinVaultKeyring`）
 - [x] Windows側: 修正後の `settings.json` で `claude -p` を起動 → 従来どおり動き、`session-log.md` に Windows 側の行が増えた。新しい対話セッションでも同じ設定が読まれる
 - [x] Playwright: Chromium 148 が起動する（`PLAYWRIGHT_HOST_PLATFORM_OVERRIDE`）
@@ -167,12 +167,12 @@ WSL側の元の `settings.json`（Fable 5.1・opus xhigh・theme dark）は `set
 - [x] `lib/git-sync-status.ps1` の走査から `*.old-*` を除外（段階5で前倒し）
 - [x] 切替の前提確認: ブランチは Windows・WSL とも全30本（apps-platform 7本）が同じコミット／作業場5つは未コミット 0
 - [x] **WSL 側に作業場5つを作り直した**（`~/wt/board|ccguide|kintai|kintai-leave|tasks-satellite`。各作業場の `.env`・`prisma/dev.db` を Windows 側から写し、`pnpm install`・`prisma generate` 済み・差分 0）。**Windows 側の作業場は畳まず残す**（改名で壊れるが、2週間の冷却の写しとして置き、削除は冷却後にまとめて）
-- [ ] **改名の前提（松田さんの判断）**: 昨日から開いたままの Claude セッション 09acae92（作業フォルダ＝`dev\em-tech-apps`、TypeScript サーバーがフォルダを掴んでいる）を閉じる。閉じないと改名が失敗するか、そのセッションが壊れる
-- [ ] `C:\wt\schedule` は「残骸」ではなかった＝9/18 14:00 に `CLAUDE.md`・`apps/`・`docs/` が更新されている（git 管理外）。**削除せず**、中身を松田さんが確認してから処分を決める
+- [x] 改名の前提: 旧セッション 09acae92（claude 26816＋子孫28本）を松田さんの承認で終了。**その親の端末 pwsh（`-NoExit -Command claude`）が待受のまま残ってフォルダを掴んでいた**（コマンドラインには出ない）→ これも閉じて改名が通った
+- [x] `C:\wt\schedule` は「残骸」ではなかった（9/18 14:00 に更新あり・git 管理外）→ **残す**（2026-09-19 決定。冷却後に他の写しと一緒に見直す）
 - [ ] **改名の前に Windows 側の作業場5つを畳む**: 各作業場が clean（`git status`）で、そのブランチが WSL 側にある（`git -C ~/dev/em-tech-apps branch --list <branch>`）ことを確認 → `git worktree remove C:\wt\<name>`。作業場の `.git` は `dev/em-tech-apps/.git/worktrees/…` を指しているので、先に改名すると5つとも「git のリポジトリではない」になる
-- [ ] Windows側 `dev\em-tech-apps` に `MOVED_TO_WSL.md` を置き `em-tech-apps.old-20260919` に改名
-- [ ] 2週間の冷却 → 問題なければ削除（親 CLAUDE.md の手順: node 停止 → GitHub 同期確認 → `Remove-Item`）。判断③
-- [ ] apps-platform も同様。`C:\wt\schedule` の残骸も削除
+- [x] Windows側 `dev\em-tech-apps` に `MOVED_TO_WSL.md` を置き `em-tech-apps.old-20260919` に改名（2026-09-19 12:20）。Windows 側の作業場5つは想定どおり「not a git repository」＝WSL 側 `~/wt/*` を使う
+- [ ] 2週間の冷却（**2026-10-03 以降**）→ 問題なければ `em-tech-apps.old-20260919`・`apps-platform.old-20260919`・`C:\wt\board|ccguide|kintai|kintai-leave|tasks-satellite` を削除（親 CLAUDE.md の手順: node 停止 → GitHub 同期確認 → `Remove-Item`）。判断③。`C:\wt\schedule` はそのとき中身を見て決める
+- [x] apps-platform も `apps-platform.old-20260919` に改名（`MOVED_TO_WSL.md` あり）。`C:\wt\schedule` は残す（上記）
 
 ## 段階7: 文書・記憶・自宅PC
 
@@ -198,7 +198,7 @@ Office 操作（doc-extract・excel-dynamic-extraction・styled-pptx の描画�
 |---|---|---|
 | ① | inside-sales-automation を移すか | 推奨どおり第2波（em-tech-apps 安定後） |
 | ② | 自宅PCにも WSL を入れるか | 推奨どおり `setup_wsl.sh` を作る。導入は松田さん |
-| ③ | Windows側の写しの削除 | 冷却2週間後に再確認 |
+| ③ | Windows側の写しの削除 | **2026-10-03 以降**に再確認（`.old-20260919` 2つ・`C:\wt\*` 5つ・`C:\wt\schedule` は中身を見て） |
 | ④ | SSH鍵: 読み取り専用2本が `chmod` 拒否なら `~/.ssh` へ複製してよいか（ルール20B の例外） | **不要になった（2026-09-19）**: 鍵フォルダの別 mount（`/mnt/key`・umask=077）で解決。複製なし・アクセス権変更なし（段階2） |
 | ⑤ | Defender の除外（`ext4.vhdx`） | **保留** |
 | ⑥ | 未追跡9件: PDF2本はコミットか／jpeg 3枚・diff1〜4.txt は削除か | **決定（2026-09-19）**: PDF はコミット、jpeg・diff は削除。ccguide 作業場の `dev.db.bak-20260815` も削除 |
@@ -229,3 +229,4 @@ Office 操作（doc-extract・excel-dynamic-extraction・styled-pptx の描画�
 - 2026-09-19 段階1〜3 完了（段階2の Docker 統合・VS Code 拡張は松田さんの操作待ち、3-4 の Terminal は段階4の複製後）。
 - 2026-09-19 段階4・5（無人で確かめられる分）完了。段階7のうち切替に依らない文書（グローバル CLAUDE.md・スキル4本・記憶・setup_wsl.sh）も完了。残り＝松田さんの操作4件 → 段階5の Docker 検証 → 段階6 → 段階7の残り（パスを書き換える文書）。
 - 2026-09-19 段階7の文書はすべて更新（em-tech-apps の CLAUDE.md は WSL 側でコミット）。段階6は WSL 側の作業場5つまで作り、**改名だけ松田さんの判断待ち**（旧セッション 09acae92 を閉じる／保険の push／`C:\wt\schedule` の処分）。Docker 検証・本番 ssh も操作待ち。
+- 2026-09-19 12:20 **段階6 完了**（旧セッションと待受端末を閉じる → 保険の push → 改名 → Terminal 整理）。Docker 統合・VS Code 拡張・本番 ssh も確認済み。**残り＝判断③（2026-10-03 以降の削除）と判断⑤（Defender・保留）、判断⑦（新機能試用後にルール24へ戻す）のみ。**
