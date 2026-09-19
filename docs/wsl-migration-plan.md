@@ -127,39 +127,46 @@ WSL側の元の `settings.json`（Fable 5.1・opus xhigh・theme dark）は `set
 - [ ] 既存の PowerShell 版「Claude: em-tech-apps」「Claude: アプリ質問対応（速い）」は**段階6の改名時に** `remove`（それまでは Windows 側が正本）
 - [ ] 親フォルダ用の WSL プロファイルは作らない（業務系は PowerShell の役割）
 
-## 段階4: リポジトリ移設
+## 段階4: リポジトリ移設 ✅ 2026-09-19 完了
 
-- [ ] 棚卸し（Windows側 git）: ブランチ30本・作業場5つ・stash 0。ccguide 作業場の未コミット1件＝`apps/ccguide/prisma/dev.db.bak-20260815`（8/15 の開発DBの控え）は削除（2026-09-19 承認）
-- [ ] 未追跡9件（判断⑥・2026-09-19 承認）: `apps/schedule/docs/*.pdf` 2本はコミット、`cct-*.jpeg` 3枚と `diff1〜4.txt` は削除
-- [ ] **保険の push（y/n）**: main（39件先行）と全ブランチ（ccguide 592・schedule-p6 314・board 73・meetings-zero-redesign 39・追跡先なし19本）を GitHub へ。移設中に Windows 側を壊しても戻せる。段階5の「テストpush」はこれで代える
-- [ ] `wsl -d Ubuntu -- git clone "/mnt/c/Users/m-matsuda/claude code/dev/em-tech-apps" ~/dev/em-tech-apps`（未push39件も運ばれる）→ 30本のブランチを取り込む（`git fetch <ローカルパス> "+refs/heads/*:refs/heads/*"`）→ `git remote set-url origin https://github.com/masahiro-matsuda/em-tech-apps.git` → `git fetch origin --prune`（複製元のローカル参照を GitHub の参照に置き換える）→ `git for-each-ref refs/heads | wc -l` が Windows 側と同じ 30
-- [ ] `.env` 10本を写す（`apps/board|ccguide|cct|meetings|schedule|tasks|visit|workflow/.env`、`apps/isms/.env.local`。`chmod 600`）。`apps/workflow/.env` の `GOOGLE_APPLICATION_CREDENTIALS` は `/mnt/c/data/key/...` に書き換える（Windows パスのまま写すと鍵が見つからない）
-- [ ] gitignore 対象で要るものを写す（`git status --ignored --short` から node_modules・.next・ログ・スクショを除いた分）: `apps/ccguide|cct|visit/prisma/dev.db`、`apps/workflow/uploads/`、`apps/kintai/docs/管理部門資料/`、`apps/ccguide/docs/ads/`・同 `セキュリティ委員会_検討事項_2026-08.md`、`apps/tasks/docs/briefing/`、`apps/schedule/tmp/`。Postgres のデータは Docker の名前付きボリュームに在るので写さない
-- [ ] `pnpm install` → `pnpm build`
-- [ ] `apps/visit`: root で `pnpm exec playwright install-deps chromium`（OS の部品）→ 通常ユーザーで `pnpm exec playwright install chromium`（ブラウザ本体。root で `--with-deps` を打つと root 側の `~/.cache` に入って通常ユーザーから見えない）
-- [ ] apps-platform: 同様に `~/dev/apps-platform`（未push3件）
-- [ ] `_design-system` は移さない（参照のみ）
-- [ ] 作業場（`C:\wt\*`）は段階6の改名まで Windows 側でそのまま使える。WSL で必要になったら `git worktree add ~/wt/<name> <branch>` で作り直す。`C:\wt\schedule` の残骸は段階6で削除
+- [x] 棚卸し（Windows側 git）: ブランチ30本・作業場5つ・stash 0。ccguide 作業場の未コミット1件＝`apps/ccguide/prisma/dev.db.bak-20260815`（8/15 の開発DBの控え）を削除
+- [x] 未追跡9件（判断⑥）: `apps/schedule/docs/*.pdf` 2本をコミット `5adb8a30`、`cct-*.jpeg` 3枚と `diff1〜4.txt` を削除 → Windows 側の未コミット 0
+- [ ] **保険の push（y/n・松田さん）**: main（41件先行）と全ブランチ（ccguide 592・schedule-p6 314・board 73・meetings-zero-redesign 39・追跡先なし19本）を GitHub へ。段階6の改名の前までに
+- [x] `git clone`（Windows のローカルから）→ 30本のブランチを取り込み → `remote set-url origin` を GitHub に → `fetch --prune` → **ブランチ 30 本・差分 0・HEAD は Windows と同じ**。`.git` は 27MB
+- [x] `.env` 9本を写して `chmod 600`（`apps/board|ccguide|cct|meetings|schedule|tasks|visit|workflow/.env`・`apps/isms/.env.local`。診断の「10本」は `.env.bak` を数えていた）。`apps/workflow/.env` の `GOOGLE_APPLICATION_CREDENTIALS` は `/mnt/key/...` に書き換え
+- [x] gitignore 対象で要るものを写した: SQLite の開発DB 3本・`apps/workflow/uploads/`（2.0M）・`apps/kintai/docs/管理部門資料/`（1.8M）・`apps/ccguide/docs/ads/`（1.2M）・同 `セキュリティ委員会_検討事項_2026-08.md`・`apps/tasks/docs/briefing/`・`apps/schedule/tmp/`。Postgres のデータは Docker の名前付きボリュームに在るので写さない
+- [x] `pnpm install --frozen-lockfile` → 13.6 秒で完了（node 22.23.2／pnpm 9.15.4）
+- [x] **追加で必要だった手順**: `prisma generate` を schema を持つ9アプリ（board・ccguide・cct・kintai・meetings・schedule・tasks・visit・workflow）で実行。生成物 `lib/generated/prisma` は git 管理外で、`postinstall` にも無い。これを飛ばすと build が「Module not found: ../lib/generated/prisma/client」で止まる
+- [x] `pnpm build`（`turbo run build --concurrency=5 --continue`）: **15 アプリすべて成功（1分34秒・2026-09-19 11:44）**
+  - 長い処理は **`systemd-run --user --unit=<名前>`** で切り離す（`wsl.exe` の接続が切れても続く）。そのために **`loginctl enable-linger m-matsuda`** を有効化した（無いと、接続が切れた時点で利用者のサービスごと止められる＝最初の2回はこれで途中終了した）
+- [x] `apps/visit` Playwright: Playwright 1.60 は Ubuntu 26.04 を未対応と判定する → `PLAYWRIGHT_HOST_PLATFORM_OVERRIDE=ubuntu24.04-x64` を `~/.profile` に置き、root で `install-deps chromium`・通常ユーザーで `install chromium` → Chromium 148 の起動を確認
+- [x] apps-platform: `~/dev/apps-platform`（ブランチ 7 本・差分 0）
+- [x] `_design-system` は移さない（参照のみ）
+- [x] 作業場（`C:\wt\*`）は段階6の改名まで Windows 側でそのまま使える。WSL で必要になったら `git worktree add ~/wt/<name> <branch>`。`C:\wt\schedule` の残骸は段階6で削除
+- [x] Windows Terminal に「Claude: em-tech-apps（WSL）」「Claude: アプリ質問対応（速い・WSL）」を追加（3-4）。`claude-shortcuts.ps1 add` は UNC パスに PowerShell の接頭辞 `Microsoft.PowerShell.Core\FileSystem::` を付けてしまうので、追加後に settings.json を直接直した（控え `settings.json.bak-wslfix-20260919`）
 
-## 段階5: 動作検証（新しい WSL セッションで。全部通るまで段階6に進まない）
+## 段階5: 動作検証（全部通るまで段階6に進まない）
 
-- [ ] Windows Terminal の WSL プロファイルから起動 → スキル一覧・CLAUDE.md・記憶の自動読み込み・ステータス行の使用率
-- [ ] フック: モデル未指定でサブエージェントを起動して止まる／語彙チェック／引継書フックを手動実行
-- [ ] WSL セッションを終えて Windows側 `_inbox/session-log.md` に1行増える（session-digest）
-- [ ] Claude の Bash から `node --version`・`pnpm --version` が nvm 側（22.23.2／9.15.4）を返す
-- [ ] `git status` が本物の変更だけ／テストコミット／push は段階4の保険 push で済んでいれば省略（残っていれば y/n。main に捨てコミットは作らない）
-- [ ] `docker build` が通り、PowerShell 側の `docker images` からも見える
-- [ ] アプリ1つ（schedule）で `docker compose up -d` → `docker ps` に Windows 側と同じコンテナ名 → `localhost:<ポート>` に届き、既存データが見える
-- [ ] `pnpm dev` → Windows のブラウザで `localhost:3000` → 保存で自動更新
-- [ ] `ssh apps.em-tech.co.jp true`（y/n）
-- [ ] `python.exe` 経由で `keyring_helper.py` が読める
-- [ ] Windows側: 修正後の `settings.json` で PowerShell の Claude を起動し従来どおり動く
+無人で確かめられるものは PowerShell 側から `claude -p` で実施済み（2026-09-19）。対話でしか見えないもの（ステータス行の表示・Terminal のプロファイルからの起動感）は松田さんが WSL プロファイルを開いたときに見る。
+
+- [x] WSL の複製フォルダで `claude -p --model sonnet`（フック全部＋Bash ツール）: node 22.23.2／pnpm 9.15.4／claude は `~/.local/bin`／Python 3.14.4／`GH_TOKEN` あり／`git status` 0／スキル 37 個／cwd 正しい
+- [x] フック: 試験入力で全フックが動いた（サブエージェントのモデル未指定を止める判定は rc=2 で期待どおり／語彙チェック／引継書の各フック／ステータス行／自動リコール＝`powershell.exe` 経由で Windows 側が走る）
+- [x] WSL セッションの終了で Windows 側 `_inbox/session-log.md` に1行増えた（`cwd=/home/m-matsuda/dev/em-tech-apps`）
+- [x] `git status` が本物の変更だけ（0件）。push は段階4の保険 push に統合
+- [ ] `docker build` が通り、PowerShell 側の `docker images` からも見える（**Docker Desktop の WSL 統合 ON のあと**）
+- [ ] アプリ1つ（schedule）で `docker compose up -d` → `docker ps` に Windows 側と同じコンテナ名 → `localhost:<ポート>` に届き、既存データが見える（同上）
+- [ ] `pnpm dev`（ccguide・4100）→ Windows のブラウザで `localhost:4100` → 保存で自動更新
+- [ ] `ssh apps.em-tech.co.jp true`（y/n・松田さん）
+- [x] `python.exe` 経由で Windows の資格情報マネージャーに届く（`WinVaultKeyring`）
+- [x] Windows側: 修正後の `settings.json` で `claude -p` を起動 → 従来どおり動き、`session-log.md` に Windows 側の行が増えた。新しい対話セッションでも同じ設定が読まれる
+- [x] Playwright: Chromium 148 が起動する（`PLAYWRIGHT_HOST_PLATFORM_OVERRIDE`）
+- [x] 同期チェック `lib/git-sync-status.ps1`: WSL 側 `~/dev/*` も「<名前> (WSL)」として表に出る（git は WSL の中で実行。`*.old-*` は除外）＝段階6・7の項目を前倒しで実施・コミット `8bf3732`
 
 ## 段階6: 切替・後始末
 
+- [x] `lib/git-sync-status.ps1` の走査から `*.old-*` を除外（段階5で前倒し）
 - [ ] **改名の前に Windows 側の作業場5つを畳む**: 各作業場が clean（`git status`）で、そのブランチが WSL 側にある（`git -C ~/dev/em-tech-apps branch --list <branch>`）ことを確認 → `git worktree remove C:\wt\<name>`。作業場の `.git` は `dev/em-tech-apps/.git/worktrees/…` を指しているので、先に改名すると5つとも「git のリポジトリではない」になる
 - [ ] Windows側 `dev\em-tech-apps` に `MOVED_TO_WSL.md` を置き `em-tech-apps.old-20260919` に改名
-- [ ] `lib/git-sync-status.ps1` の走査から `*.old-*` を除外（改名した写しを「未push 39」と警告し続けないため。段階7の WSL 走査と同じ変更で）
 - [ ] 2週間の冷却 → 問題なければ削除（親 CLAUDE.md の手順: node 停止 → GitHub 同期確認 → `Remove-Item`）。判断③
 - [ ] apps-platform も同様。`C:\wt\schedule` の残骸も削除
 
@@ -170,7 +177,7 @@ WSL側の元の `settings.json`（Fable 5.1・opus xhigh・theme dark）は `set
 - [ ] 親 `claude code/CLAUDE.md`: 入口に WSL を追加。em-tech-apps の正本が WSL 側であることを明記
 - [ ] `em-tech-apps/CLAUDE.md` 53行目: 「`docker build` は PowerShell で」→「PowerShell または WSL の bash（Git Bash は不可）」
 - [ ] `em-tech-apps/CLAUDE.md`「作業場（git worktree）の標準」: `C:\wt\<アプリ名>` → `~/wt/<アプリ名>`、作業場の表を WSL の実態に、`corepack pnpm install` の注記を見直す
-- [ ] `lib/git-sync-status.ps1`: WSL 側 `~/dev/*` も `wsl -d Ubuntu -- git -C …` で走査に加える（改名後は em-tech-apps が監視から消えるため）。`weekly-review` の横断検知も同じ
+- [x] `lib/git-sync-status.ps1`: WSL 側 `~/dev/*` を走査に追加済み（段階5）。`weekly-review` スキルの横断検知の文言は段階7で
 - [ ] `agents/apps-answerer.md`（15行目）・`skills/apps-qa/SKILL.md`: Windows 側のセッションから読むパスを `\\wsl.localhost\Ubuntu\home\m-matsuda\dev\em-tech-apps` に（そのままだと改名した古い写しを読む）
 - [ ] `settings.json` の autoMode 本文: 鍵のパスに WSL 表記（`/mnt/c/data/key/...`）を併記
 - [ ] 記憶: `apps-prod-deploy-playbook`（WSL から打つ場合）、`reference_pwsh_terminal_setup`、`project_status_board`
