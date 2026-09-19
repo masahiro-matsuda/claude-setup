@@ -54,16 +54,17 @@
 - [x] 引継書 `~/.claude/handoff/wsl-migration.md`
 - [ ] （運用）段階1が終わるまで WSL から `git add` を打たない
 
-## 段階1: 改行対策
+## 段階1: 改行対策 ✅ 2026-09-19 完了
 
 `.gitattributes` に `* text=auto`。内部はLF・Windowsの作業ツリーはCRLF・WSLの作業ツリーはLF。
 
-- [ ] em-tech-apps: 既存2行（`*.svg`・`tools/app-icons/**`）の上に `* text=auto` → コミット（main。未push39件と同じ枝）→ WSLから `git status` が9件（本物のみ）になることを確認
-  - 作業場5本のブランチには main を取り込むまで入らない（偽差分のまま）＝**作業場では段階1のあとも WSL から `git add` しない**
-- [ ] ain-kitting-touchless: `* text=auto` を追加。既存の `*.bat`/`*.cmd` の CRLF 固定と `.ppkg` binary は残す
-- [ ] em-tech-knowledge・apps-platform・claude-setup: 同様
-- [ ] 残りのリポジトリ: `git ls-files --eol | Select-String "i/(crlf|mixed)"` で内部に CRLF も混在も無いことを確認してから追加（em-tech-apps は両方 0 件・確認済み）。CRLF があるものだけ `git add --renormalize .`。既に `*` の指定があるもの（`emtech_system_live` の `* -text`、`emtech_system` の `* text=auto`）は触らない
-- [ ] `init-project-claude-md` スキルの「.gitignoreベースライン」に `.gitattributes`（`* text=auto`）を足す
+- [x] em-tech-apps: 既存2行（`*.svg`・`tools/app-icons/**`）の上に `* text=auto` → コミット `c3f7180b`（main）→ WSLから `git status` が本物だけになった（改行の偽差分 0・権限の差分 0）
+  - 作業場5本のブランチには main を取り込むまで入らない（偽差分のまま）＝**作業場では段階1のあとも WSL から `git add` しない**。なお Windows の作業場は WSL からは開けない（`.git` の指す先が `C:/...` 表記）
+- [x] ain-kitting-touchless: `65729c7`。既存の `*.bat`/`*.cmd` の CRLF 固定と `.ppkg` binary は残した
+- [x] em-tech-knowledge `2399c71`・apps-platform `53cab2a`・claude-setup `db81add`
+- [x] 残りのリポジトリ: 全22リポジトリで内部の CRLF・混在は 0 件（`emtech_system_live` の346件は `* -text` 指定済みで対象外）→ `~/.claude`（`f7d6f0a`・WSL からも引継書をコミットするため）を含む22本に追加してコミット。`emtech_system`／`emtech_system_live` は触らず
+- [x] `init-project-claude-md` スキル STEP 5 に `.gitattributes` を追加
+- 発見: WSL から見ると `apps/.claude/`・`apps/meetings/.claude/`（em-tech-apps）と `.claude/`（vuln-mgmt）が未追跡に見える。原因＝Windows の全体除外 `~/.config/git/ignore`（`**/.claude/settings.local.json`）が WSL に無い → 段階2の git 設定で解消
 
 ## 段階2: WSLの土台
 
@@ -73,7 +74,7 @@ WSL側は `wsl -d Ubuntu -u root -- bash -lc "<cmd>"`（管理者）／`wsl -d U
 - [ ] `apt install -y python-is-python3 python3-pip gh`
 - [ ] `~/.profile` の末尾に nvm の3行（`.bashrc` 119〜121行と同じ `export NVM_DIR`／`nvm.sh`／`bash_completion`）→ `bash -lc "which node corepack"` が `~/.nvm/...` を返す（足す前は apt の `/usr/bin/node`）
 - [ ] claude: 公式インストーラ `curl -fsSL https://claude.ai/install.sh | bash`（`~/.local/bin/claude`・node 不要・自分で更新する）→ `ln -s /home/m-matsuda/.local/bin/claude /usr/local/bin/claude`（非ログインシェルでも Windows 版 `/mnt/c/.../npm/claude` より先に見つかる）→ `bash -c "claude --version"` が Linux 版を返す → nvm 内の npm 版は `npm uninstall -g @anthropic-ai/claude-code`（対話シェルでは nvm の bin が先に来るため残すと二重になる）
-- [ ] git（通常ユーザー）: `user.name m-matsuda` / `user.email 61611032+masahiro-matsuda@users.noreply.github.com` / `core.quotepath false` / `credential.helper "/mnt/c/Program\ Files/Git/mingw64/bin/git-credential-manager.exe"`（Microsoft 公式手順。Windows のログインを流用）
+- [ ] git（通常ユーザー）: `user.name m-matsuda` / `user.email 61611032+masahiro-matsuda@users.noreply.github.com` / `core.quotepath false` / `credential.helper "/mnt/c/Program\ Files/Git/mingw64/bin/git-credential-manager.exe"`（Microsoft 公式手順。Windows のログインを流用）/ `~/.config/git/ignore` を Windows と同じ内容（`**/.claude/settings.local.json`）で作る（無いと WSL だけ `.claude/` が未追跡に見える。段階1で発見）
 - [ ] `gh auth login --with-token`（トークンは `gh.exe auth token` の出力を直接パイプ。ファイルに書かない）
 - [ ] `corepack enable && corepack prepare pnpm@9.15.4 --activate`（`~/.profile` を足した後・nvm の node で。apt の corepack は root 所有の場所に書こうとして失敗する）
 - [ ] `~/.ssh/config`: Windows側の2ホスト（鍵 `C:/Data/key/sakura_sys.em-tech.co.jp/id_rsa`・`C:/Users/m-matsuda/.ssh/cybozu_archive`）＋ `apps.em-tech.co.jp`（`/mnt/c/data/key/apps.em-tech.co.jp/id_ed25519`）を `/mnt/c/...` 表記で。`known_hosts` を写す
