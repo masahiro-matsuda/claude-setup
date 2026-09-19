@@ -134,7 +134,7 @@ WSL側の元の `settings.json`（Fable 5.1・opus xhigh・theme dark）は `set
 - [x] **保険の push**（2026-09-19 承認・WSL から `git push -u origin --all`・em-tech-apps 30本・apps-platform 7本すべて GitHub と差なし）。元の案＝main（41件先行）と全ブランチ（ccguide 592・schedule-p6 314・board 73・meetings-zero-redesign 39・追跡先なし19本）を GitHub へ。段階6の改名の前までに
 - [x] `git clone`（Windows のローカルから）→ 30本のブランチを取り込み → `remote set-url origin` を GitHub に → `fetch --prune` → **ブランチ 30 本・差分 0・HEAD は Windows と同じ**。`.git` は 27MB
 - [x] `.env` 9本を写して `chmod 600`（`apps/board|ccguide|cct|meetings|schedule|tasks|visit|workflow/.env`・`apps/isms/.env.local`。診断の「10本」は `.env.bak` を数えていた）。`apps/workflow/.env` の `GOOGLE_APPLICATION_CREDENTIALS` は `/mnt/key/...` に書き換え
-- [x] gitignore 対象で要るものを写した: SQLite の開発DB 3本・`apps/workflow/uploads/`（2.0M）・`apps/kintai/docs/管理部門資料/`（1.8M）・`apps/ccguide/docs/ads/`（1.2M）・同 `セキュリティ委員会_検討事項_2026-08.md`・`apps/tasks/docs/briefing/`・`apps/schedule/tmp/`。Postgres のデータは Docker の名前付きボリュームに在るので写さない
+- [x] gitignore 対象で要るものを写した: SQLite の開発DB 3本・`apps/workflow/uploads/`（2.0M）・`apps/kintai/docs/管理部門資料/`（1.8M）・`apps/ccguide/docs/ads/`（1.2M）・同 `セキュリティ委員会_検討事項_2026-08.md`・`apps/tasks/docs/briefing/`・`apps/schedule/tmp/`。Postgres のデータは Docker の名前付きボリュームに在るので写さない。**2026-09-19 自己点検で抜け2件**: `.claude/settings.local.json`（git 管理外の個人設定＝フック2本と本番反映の許可）を写していなかった → WSL 向けに作り直した（鍵パスは `/mnt/key`・作業場には置かない）。`.env` を Windows から写すと CRLF のまま（meetings・visit・workflow）→ LF に直した（Next.js は動くが、シェルから読むと末尾の CR が値に混ざる）
 - [x] `pnpm install --frozen-lockfile` → 13.6 秒で完了（node 22.23.2／pnpm 9.15.4）
 - [x] **追加で必要だった手順**: `prisma generate` を schema を持つ9アプリ（board・ccguide・cct・kintai・meetings・schedule・tasks・visit・workflow）で実行。生成物 `lib/generated/prisma` は git 管理外で、`postinstall` にも無い。これを飛ばすと build が「Module not found: ../lib/generated/prisma/client」で止まる
 - [x] `pnpm build`（`turbo run build --concurrency=5 --continue`）: **15 アプリすべて成功（1分34秒・2026-09-19 11:44）**
@@ -166,7 +166,7 @@ WSL側の元の `settings.json`（Fable 5.1・opus xhigh・theme dark）は `set
 
 - [x] `lib/git-sync-status.ps1` の走査から `*.old-*` を除外（段階5で前倒し）
 - [x] 切替の前提確認: ブランチは Windows・WSL とも全30本（apps-platform 7本）が同じコミット／作業場5つは未コミット 0
-- [x] **WSL 側に作業場5つを作り直した**（`~/wt/board|ccguide|kintai|kintai-leave|tasks-satellite`。各作業場の `.env`・`prisma/dev.db` を Windows 側から写し、`pnpm install`・`prisma generate` 済み・差分 0）。**Windows 側の作業場は畳まず残す**（改名で壊れるが、2週間の冷却の写しとして置き、削除は冷却後にまとめて）
+- [x] **WSL 側に作業場5つを作り直した**（`~/wt/board|ccguide|kintai|kintai-leave|tasks-satellite`。各作業場の `.env`・`prisma/dev.db` を Windows 側から写し、`pnpm install`・`prisma generate` 済み・差分 0）。**Windows 側の作業場は畳まず残す**（改名で壊れるが、2週間の冷却の写しとして置き、削除は冷却後にまとめて）。**2026-09-19 自己点検**: ccguide の作業場だけ `prisma/dev.db` が写っていなかった → Windows 側の作業場の 8/29 版（`securityVersion` 列あり）を写した
 - [x] 改名の前提: 旧セッション 09acae92（claude 26816＋子孫28本）を松田さんの承認で終了。**その親の端末 pwsh（`-NoExit -Command claude`）が待受のまま残ってフォルダを掴んでいた**（コマンドラインには出ない）→ これも閉じて改名が通った
 - [x] `C:\wt\schedule` は「残骸」ではなかった（9/18 14:00 に更新あり・git 管理外）→ **残す**（2026-09-19 決定。冷却後に他の写しと一緒に見直す）
 - [ ] **改名の前に Windows 側の作業場5つを畳む**: 各作業場が clean（`git status`）で、そのブランチが WSL 側にある（`git -C ~/dev/em-tech-apps branch --list <branch>`）ことを確認 → `git worktree remove C:\wt\<name>`。作業場の `.git` は `dev/em-tech-apps/.git/worktrees/…` を指しているので、先に改名すると5つとも「git のリポジトリではない」になる
@@ -230,3 +230,4 @@ Office 操作（doc-extract・excel-dynamic-extraction・styled-pptx の描画�
 - 2026-09-19 段階4・5（無人で確かめられる分）完了。段階7のうち切替に依らない文書（グローバル CLAUDE.md・スキル4本・記憶・setup_wsl.sh）も完了。残り＝松田さんの操作4件 → 段階5の Docker 検証 → 段階6 → 段階7の残り（パスを書き換える文書）。
 - 2026-09-19 段階7の文書はすべて更新（em-tech-apps の CLAUDE.md は WSL 側でコミット）。段階6は WSL 側の作業場5つまで作り、**改名だけ松田さんの判断待ち**（旧セッション 09acae92 を閉じる／保険の push／`C:\wt\schedule` の処分）。Docker 検証・本番 ssh も操作待ち。
 - 2026-09-19 12:20 **段階6 完了**（旧セッションと待受端末を閉じる → 保険の push → 改名 → Terminal 整理）。Docker 統合・VS Code 拡張・本番 ssh も確認済み。**残り＝判断③（2026-10-03 以降の削除）と判断⑤（Defender・保留）、判断⑦（新機能試用後にルール24へ戻す）のみ。**
+- 2026-09-19 14:30 **自己点検**（WSL セッション 61ca07d7）: 段階2〜7 の期待動作を実機で確認（リンク16・ブランチ30本一致・作業場5・フック23・型チェック・文言検査・変更通知・`/mnt/key`・Docker・Terminal・資格情報・終了記録）。抜け3件＝ccguide 作業場の `dev.db`・`.claude/settings.local.json`・`.env` 3本の CRLF を直した。
