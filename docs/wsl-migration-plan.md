@@ -200,7 +200,7 @@ Office 操作（doc-extract・excel-dynamic-extraction・styled-pptx の描画�
 | ② | 自宅PCにも WSL を入れるか | 推奨どおり `setup_wsl.sh` を作る。導入は松田さん |
 | ③ | Windows側の写しの削除 | **2026-10-03 以降**に再確認（`.old-20260919` 2つ・`C:\wt\*` 5つ・`C:\wt\schedule` は中身を見て） |
 | ④ | SSH鍵: 読み取り専用2本が `chmod` 拒否なら `~/.ssh` へ複製してよいか（ルール20B の例外） | **不要になった（2026-09-19）**: 鍵フォルダの別 mount（`/mnt/key`・umask=077）で解決。複製なし・アクセス権変更なし（段階2） |
-| ⑤ | Defender の除外（`ext4.vhdx`） | **保留** |
+| ⑤ | Defender の除外（`ext4.vhdx`） | **除外した（2026-09-19 松田さん決定）**: `C:\Users\m-matsuda\AppData\Local\wsl\{37131c4d-...}\ext4.vhdx` を `Add-MpPreference -ExclusionPath` で登録（管理者で確認済み）。WSL 内のファイルは Defender の検査対象外になる＝ISMS の記録としてここに残す |
 | ⑥ | 未追跡9件: PDF2本はコミットか／jpeg 3枚・diff1〜4.txt は削除か | **決定（2026-09-19）**: PDF はコミット、jpeg・diff は削除。ccguide 作業場の `dev.db.bak-20260815` も削除 |
 | ⑦ | 既定モデル・effort（settings.json の1本化） | **前提が変わった（2026-09-19）**: Windows 側の正本に `/model` で `claude-fable-5-1[1m]` 既定と opus・fable の xhigh が保存済み。1本化後は両側でこの値が効く。**新機能7件の試用が終わったらルール24へ戻す**（`model` を消し effort を high） |
 
