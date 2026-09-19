@@ -155,7 +155,7 @@ WSL側の元の `settings.json`（Fable 5.1・opus xhigh・theme dark）は `set
 - [x] `git status` が本物の変更だけ（0件）。push は段階4の保険 push に統合
 - [ ] `docker build` が通り、PowerShell 側の `docker images` からも見える（**Docker Desktop の WSL 統合 ON のあと**）
 - [ ] アプリ1つ（schedule）で `docker compose up -d` → `docker ps` に Windows 側と同じコンテナ名 → `localhost:<ポート>` に届き、既存データが見える（同上）
-- [ ] `pnpm dev`（ccguide・4100）→ Windows のブラウザで `localhost:4100` → 保存で自動更新
+- [x] `pnpm dev`（training・4100。ccguide は main の `dev.db` が schema より古く `securityVersion` 列が無いため起動直後に落ちる＝WSL の問題ではなく開発DBの鮮度。新しい DB は `C:\wt\ccguide` 側）→ Windows の `curl localhost:4100` が 200（0.1秒・WSL2 の localhost 転送）→ **WSL 側でファイルを変えた直後の要求だけ再コンパイルが走った**（変更なしの再要求では走らない）＝変更検知 OK
 - [ ] `ssh apps.em-tech.co.jp true`（y/n・松田さん）
 - [x] `python.exe` 経由で Windows の資格情報マネージャーに届く（`WinVaultKeyring`）
 - [x] Windows側: 修正後の `settings.json` で `claude -p` を起動 → 従来どおり動き、`session-log.md` に Windows 側の行が増えた。新しい対話セッションでも同じ設定が読まれる
