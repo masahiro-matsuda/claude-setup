@@ -172,7 +172,7 @@ WSL側の元の `settings.json`（Fable 5.1・opus xhigh・theme dark）は `set
 
 ## 段階7: 文書・記憶・自宅PC
 
-- [ ] グローバル `CLAUDE.md`: 「WSL／PowerShell の役割分担」を短く追加。ルール20B に WSL での鍵の扱い、ルール22 に WSL 側の `quotepath`
+- [x] グローバル `CLAUDE.md`: 「10. WSL／PowerShell の役割分担（ルール25）」を追加。ルール20B に `/mnt/key`、ルール22 に `MSYS_NO_PATHCONV` と WSL の `quotepath`（2026-09-19）
 - [ ] `projects.md`: パスを `~/claude code/...` に。em-tech-apps の行は WSL 側のパス
 - [ ] 親 `claude code/CLAUDE.md`: 入口に WSL を追加。em-tech-apps の正本が WSL 側であることを明記
 - [ ] `em-tech-apps/CLAUDE.md` 53行目: 「`docker build` は PowerShell で」→「PowerShell または WSL の bash（Git Bash は不可）」
@@ -180,9 +180,9 @@ WSL側の元の `settings.json`（Fable 5.1・opus xhigh・theme dark）は `set
 - [x] `lib/git-sync-status.ps1`: WSL 側 `~/dev/*` を走査に追加済み（段階5）。`weekly-review` スキルの横断検知の文言は段階7で
 - [ ] `agents/apps-answerer.md`（15行目）・`skills/apps-qa/SKILL.md`: Windows 側のセッションから読むパスを `\\wsl.localhost\Ubuntu\home\m-matsuda\dev\em-tech-apps` に（そのままだと改名した古い写しを読む）
 - [ ] `settings.json` の autoMode 本文: 鍵のパスに WSL 表記（`/mnt/c/data/key/...`）を併記
-- [ ] 記憶: `apps-prod-deploy-playbook`（WSL から打つ場合）、`reference_pwsh_terminal_setup`、`project_status_board`
-- [ ] スキル: `git-sync`・`obsidian-memory`・`weekly-review`・`session-handoff` に WSL の注意
-- [ ] `claude-setup/setup_wsl.sh`（段階2〜3を再現する。自宅PC用＝判断②）
+- [x] 記憶: `project_wsl_migration`（今日の到達点と、ぶつかって直した点）・`reference_pwsh_terminal_setup`（WSL プロファイル2つ）を更新。`apps-prod-deploy-playbook`（WSL から打つ場合）・`project_status_board` は切替（段階6）後に
+- [x] スキル: `git-sync`・`obsidian-memory`・`weekly-review`・`session-handoff` の末尾に「WSL 併用時の注意」を追記
+- [x] `claude-setup/setup_wsl.sh`（root / user の2段で段階2〜3を再現。自宅PC用＝判断②）
 
 ## Windows に残すもの（WSL では動かない・動かさない）
 
@@ -223,3 +223,4 @@ Office 操作（doc-extract・excel-dynamic-extraction・styled-pptx の描画�
 - 2026-09-19 段階0 完了（WSL セッション dfc968a3）。以降は PowerShell 側のセッションで実行。
 - 2026-09-19 PowerShell 側セッションで計画を実機と突き合わせ、抜け13件を反映（nvm が非対話で読まれない／`.env` の Windows パス／gitignore 対象の写し／作業場の破損／同期チェック／夜間の知見抽出／Windows 側から読む役／判断⑦の前提／Playwright の root／保険の push／作業場の偽差分／`i/mixed`／判断⑥の決定）。
 - 2026-09-19 段階1〜3 完了（段階2の Docker 統合・VS Code 拡張は松田さんの操作待ち、3-4 の Terminal は段階4の複製後）。
+- 2026-09-19 段階4・5（無人で確かめられる分）完了。段階7のうち切替に依らない文書（グローバル CLAUDE.md・スキル4本・記憶・setup_wsl.sh）も完了。残り＝松田さんの操作4件 → 段階5の Docker 検証 → 段階6 → 段階7の残り（パスを書き換える文書）。
