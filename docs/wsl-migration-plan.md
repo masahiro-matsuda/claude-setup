@@ -202,7 +202,7 @@ Office 操作（doc-extract・excel-dynamic-extraction・styled-pptx の描画�
 | ④ | SSH鍵: 読み取り専用2本が `chmod` 拒否なら `~/.ssh` へ複製してよいか（ルール20B の例外） | **不要になった（2026-09-19）**: 鍵フォルダの別 mount（`/mnt/key`・umask=077）で解決。複製なし・アクセス権変更なし（段階2） |
 | ⑤ | Defender の除外（`ext4.vhdx`） | **除外した（2026-09-19 松田さん決定）**: `C:\Users\m-matsuda\AppData\Local\wsl\{37131c4d-...}\ext4.vhdx` を `Add-MpPreference -ExclusionPath` で登録（管理者で確認済み）。WSL 内のファイルは Defender の検査対象外になる＝ISMS の記録としてここに残す |
 | ⑥ | 未追跡9件: PDF2本はコミットか／jpeg 3枚・diff1〜4.txt は削除か | **決定（2026-09-19）**: PDF はコミット、jpeg・diff は削除。ccguide 作業場の `dev.db.bak-20260815` も削除 |
-| ⑦ | 既定モデル・effort（settings.json の1本化） | **前提が変わった（2026-09-19）**: Windows 側の正本に `/model` で `claude-fable-5-1[1m]` 既定と opus・fable の xhigh が保存済み。1本化後は両側でこの値が効く。**新機能7件の試用が終わったらルール24へ戻す**（`model` を消し effort を high） |
+| ⑦ | 既定モデル・effort（settings.json の1本化） | **前提が変わった（2026-09-19）**: Windows 側の正本に `/model` で `claude-fable-5-1[1m]` 既定と opus・fable の xhigh が保存済み。1本化後は両側でこの値が効く。**2026-09-19 完了**（`model` を `opus[1m]`、`modelSettings` の xhigh を high に戻した） |
 
 ## 併用と無関係に見つかった問題（未対処）
 
@@ -229,5 +229,5 @@ Office 操作（doc-extract・excel-dynamic-extraction・styled-pptx の描画�
 - 2026-09-19 段階1〜3 完了（段階2の Docker 統合・VS Code 拡張は松田さんの操作待ち、3-4 の Terminal は段階4の複製後）。
 - 2026-09-19 段階4・5（無人で確かめられる分）完了。段階7のうち切替に依らない文書（グローバル CLAUDE.md・スキル4本・記憶・setup_wsl.sh）も完了。残り＝松田さんの操作4件 → 段階5の Docker 検証 → 段階6 → 段階7の残り（パスを書き換える文書）。
 - 2026-09-19 段階7の文書はすべて更新（em-tech-apps の CLAUDE.md は WSL 側でコミット）。段階6は WSL 側の作業場5つまで作り、**改名だけ松田さんの判断待ち**（旧セッション 09acae92 を閉じる／保険の push／`C:\wt\schedule` の処分）。Docker 検証・本番 ssh も操作待ち。
-- 2026-09-19 12:20 **段階6 完了**（旧セッションと待受端末を閉じる → 保険の push → 改名 → Terminal 整理）。Docker 統合・VS Code 拡張・本番 ssh も確認済み。**残り＝判断③（2026-10-03 以降の削除）と判断⑤（Defender・保留）、判断⑦（新機能試用後にルール24へ戻す）のみ。**
+- 2026-09-19 12:20 **段階6 完了**（旧セッションと待受端末を閉じる → 保険の push → 改名 → Terminal 整理）。Docker 統合・VS Code 拡張・本番 ssh も確認済み。**残り＝判断③（2026-10-03 以降の削除）と判断⑤（Defender・保留）のみ。判断⑦は 2026-09-19 完了。**
 - 2026-09-19 14:30 **自己点検**（WSL セッション 61ca07d7）: 段階2〜7 の期待動作を実機で確認（リンク16・ブランチ30本一致・作業場5・フック23・型チェック・文言検査・変更通知・`/mnt/key`・Docker・Terminal・資格情報・終了記録）。抜け3件＝ccguide 作業場の `dev.db`・`.claude/settings.local.json`・`.env` 3本の CRLF を直した。
