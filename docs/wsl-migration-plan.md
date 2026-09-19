@@ -162,9 +162,13 @@ WSL側の元の `settings.json`（Fable 5.1・opus xhigh・theme dark）は `set
 - [x] Playwright: Chromium 148 が起動する（`PLAYWRIGHT_HOST_PLATFORM_OVERRIDE`）
 - [x] 同期チェック `lib/git-sync-status.ps1`: WSL 側 `~/dev/*` も「<名前> (WSL)」として表に出る（git は WSL の中で実行。`*.old-*` は除外）＝段階6・7の項目を前倒しで実施・コミット `8bf3732`
 
-## 段階6: 切替・後始末
+## 段階6: 切替・後始末（2026-09-19 着手。改名は松田さんの判断待ち）
 
 - [x] `lib/git-sync-status.ps1` の走査から `*.old-*` を除外（段階5で前倒し）
+- [x] 切替の前提確認: ブランチは Windows・WSL とも全30本（apps-platform 7本）が同じコミット／作業場5つは未コミット 0
+- [x] **WSL 側に作業場5つを作り直した**（`~/wt/board|ccguide|kintai|kintai-leave|tasks-satellite`。各作業場の `.env`・`prisma/dev.db` を Windows 側から写し、`pnpm install`・`prisma generate` 済み・差分 0）。**Windows 側の作業場は畳まず残す**（改名で壊れるが、2週間の冷却の写しとして置き、削除は冷却後にまとめて）
+- [ ] **改名の前提（松田さんの判断）**: 昨日から開いたままの Claude セッション 09acae92（作業フォルダ＝`dev\em-tech-apps`、TypeScript サーバーがフォルダを掴んでいる）を閉じる。閉じないと改名が失敗するか、そのセッションが壊れる
+- [ ] `C:\wt\schedule` は「残骸」ではなかった＝9/18 14:00 に `CLAUDE.md`・`apps/`・`docs/` が更新されている（git 管理外）。**削除せず**、中身を松田さんが確認してから処分を決める
 - [ ] **改名の前に Windows 側の作業場5つを畳む**: 各作業場が clean（`git status`）で、そのブランチが WSL 側にある（`git -C ~/dev/em-tech-apps branch --list <branch>`）ことを確認 → `git worktree remove C:\wt\<name>`。作業場の `.git` は `dev/em-tech-apps/.git/worktrees/…` を指しているので、先に改名すると5つとも「git のリポジトリではない」になる
 - [ ] Windows側 `dev\em-tech-apps` に `MOVED_TO_WSL.md` を置き `em-tech-apps.old-20260919` に改名
 - [ ] 2週間の冷却 → 問題なければ削除（親 CLAUDE.md の手順: node 停止 → GitHub 同期確認 → `Remove-Item`）。判断③
@@ -173,13 +177,13 @@ WSL側の元の `settings.json`（Fable 5.1・opus xhigh・theme dark）は `set
 ## 段階7: 文書・記憶・自宅PC
 
 - [x] グローバル `CLAUDE.md`: 「10. WSL／PowerShell の役割分担（ルール25）」を追加。ルール20B に `/mnt/key`、ルール22 に `MSYS_NO_PATHCONV` と WSL の `quotepath`（2026-09-19）
-- [ ] `projects.md`: パスを `~/claude code/...` に。em-tech-apps の行は WSL 側のパス
-- [ ] 親 `claude code/CLAUDE.md`: 入口に WSL を追加。em-tech-apps の正本が WSL 側であることを明記
-- [ ] `em-tech-apps/CLAUDE.md` 53行目: 「`docker build` は PowerShell で」→「PowerShell または WSL の bash（Git Bash は不可）」
-- [ ] `em-tech-apps/CLAUDE.md`「作業場（git worktree）の標準」: `C:\wt\<アプリ名>` → `~/wt/<アプリ名>`、作業場の表を WSL の実態に、`corepack pnpm install` の注記を見直す
+- [x] `projects.md`: em-tech-apps 配下の3行を `~/dev/em-tech-apps/apps/...`（WSL）に、冒頭に UNC の読み方を追記
+- [x] 親 `claude code/CLAUDE.md`: 表の2行と入口に WSL を追記（git 管理外の親フォルダ＝コミットなし）
+- [x] `em-tech-apps/CLAUDE.md`: 「`docker build` は WSL の bash か PowerShell」に（WSL 側でコミット）
+- [x] `em-tech-apps/CLAUDE.md`「作業場（git worktree）の標準」: `~/wt/<アプリ名>`・冒頭に移設の注記・`pnpm install`＋`.env`/`dev.db`/`prisma generate` の注記（WSL 側でコミット `e9373bc9`）
 - [x] `lib/git-sync-status.ps1`: WSL 側 `~/dev/*` を走査に追加済み（段階5）。`weekly-review` スキルの横断検知の文言は段階7で
-- [ ] `agents/apps-answerer.md`（15行目）・`skills/apps-qa/SKILL.md`: Windows 側のセッションから読むパスを `\\wsl.localhost\Ubuntu\home\m-matsuda\dev\em-tech-apps` に（そのままだと改名した古い写しを読む）
-- [ ] `settings.json` の autoMode 本文: 鍵のパスに WSL 表記（`/mnt/c/data/key/...`）を併記
+- [x] `agents/apps-answerer.md`: 読むパスを WSL 側（Windows からは UNC）に。`apps-qa/SKILL.md` にパスの直書きは無かった
+- [x] `settings.json` の autoMode 本文: 鍵に `/mnt/key/` を併記、Web開発は WSL の旨を追記
 - [x] 記憶: `project_wsl_migration`（今日の到達点と、ぶつかって直した点）・`reference_pwsh_terminal_setup`（WSL プロファイル2つ）を更新。`apps-prod-deploy-playbook`（WSL から打つ場合）・`project_status_board` は切替（段階6）後に
 - [x] スキル: `git-sync`・`obsidian-memory`・`weekly-review`・`session-handoff` の末尾に「WSL 併用時の注意」を追記
 - [x] `claude-setup/setup_wsl.sh`（root / user の2段で段階2〜3を再現。自宅PC用＝判断②）
@@ -224,3 +228,4 @@ Office 操作（doc-extract・excel-dynamic-extraction・styled-pptx の描画�
 - 2026-09-19 PowerShell 側セッションで計画を実機と突き合わせ、抜け13件を反映（nvm が非対話で読まれない／`.env` の Windows パス／gitignore 対象の写し／作業場の破損／同期チェック／夜間の知見抽出／Windows 側から読む役／判断⑦の前提／Playwright の root／保険の push／作業場の偽差分／`i/mixed`／判断⑥の決定）。
 - 2026-09-19 段階1〜3 完了（段階2の Docker 統合・VS Code 拡張は松田さんの操作待ち、3-4 の Terminal は段階4の複製後）。
 - 2026-09-19 段階4・5（無人で確かめられる分）完了。段階7のうち切替に依らない文書（グローバル CLAUDE.md・スキル4本・記憶・setup_wsl.sh）も完了。残り＝松田さんの操作4件 → 段階5の Docker 検証 → 段階6 → 段階7の残り（パスを書き換える文書）。
+- 2026-09-19 段階7の文書はすべて更新（em-tech-apps の CLAUDE.md は WSL 側でコミット）。段階6は WSL 側の作業場5つまで作り、**改名だけ松田さんの判断待ち**（旧セッション 09acae92 を閉じる／保険の push／`C:\wt\schedule` の処分）。Docker 検証・本番 ssh も操作待ち。
