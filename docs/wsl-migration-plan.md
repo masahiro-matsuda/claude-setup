@@ -171,7 +171,7 @@ WSL側の元の `settings.json`（Fable 5.1・opus xhigh・theme dark）は `set
 - [x] `C:\wt\schedule` は「残骸」ではなかった（9/18 14:00 に更新あり・git 管理外）→ **残す**（2026-09-19 決定。冷却後に他の写しと一緒に見直す）
 - [ ] **改名の前に Windows 側の作業場5つを畳む**: 各作業場が clean（`git status`）で、そのブランチが WSL 側にある（`git -C ~/dev/em-tech-apps branch --list <branch>`）ことを確認 → `git worktree remove C:\wt\<name>`。作業場の `.git` は `dev/em-tech-apps/.git/worktrees/…` を指しているので、先に改名すると5つとも「git のリポジトリではない」になる
 - [x] Windows側 `dev\em-tech-apps` に `MOVED_TO_WSL.md` を置き `em-tech-apps.old-20260919` に改名（2026-09-19 12:20）。Windows 側の作業場5つは想定どおり「not a git repository」＝WSL 側 `~/wt/*` を使う
-- [ ] 2週間の冷却（**2026-10-03 以降**）→ 問題なければ `em-tech-apps.old-20260919`・`apps-platform.old-20260919`・`C:\wt\board|ccguide|kintai|kintai-leave|tasks-satellite` を削除（親 CLAUDE.md の手順: node 停止 → GitHub 同期確認 → `Remove-Item`）。判断③。`C:\wt\schedule` はそのとき中身を見て決める
+- [x] 2週間の冷却（**2026-10-03 以降**。2026-10-07 実施）→ 問題なければ `em-tech-apps.old-20260919`・`apps-platform.old-20260919`・`C:\wt\board|ccguide|kintai|kintai-leave|tasks-satellite` を削除（親 CLAUDE.md の手順: node 停止 → GitHub 同期確認 → `Remove-Item`）。判断③。`C:\wt\schedule` はそのとき中身を見て決める
 - [x] apps-platform も `apps-platform.old-20260919` に改名（`MOVED_TO_WSL.md` あり）。`C:\wt\schedule` は残す（上記）
 
 ## 段階7: 文書・記憶・自宅PC
@@ -198,7 +198,7 @@ Office 操作（doc-extract・excel-dynamic-extraction・styled-pptx の描画�
 |---|---|---|
 | ① | inside-sales-automation を移すか | 推奨どおり第2波（em-tech-apps 安定後） |
 | ② | 自宅PCにも WSL を入れるか | 推奨どおり `setup_wsl.sh` を作る。導入は松田さん |
-| ③ | Windows側の写しの削除 | **2026-10-03 以降**に再確認（`.old-20260919` 2つ・`C:\wt\*` 5つ・`C:\wt\schedule` は中身を見て） |
+| ③ | Windows側の写しの削除 | **2026-10-07 削除済み**（`.old-20260919` 2つ・`C:\wt` ごと。確かめた内容は実行記録） |
 | ④ | SSH鍵: 読み取り専用2本が `chmod` 拒否なら `~/.ssh` へ複製してよいか（ルール20B の例外） | **不要になった（2026-09-19）**: 鍵フォルダの別 mount（`/mnt/key`・umask=077）で解決。複製なし・アクセス権変更なし（段階2） |
 | ⑤ | Defender の除外（`ext4.vhdx`） | **除外した（2026-09-19 松田さん決定）**: `C:\Users\m-matsuda\AppData\Local\wsl\{37131c4d-...}\ext4.vhdx` を `Add-MpPreference -ExclusionPath` で登録（管理者で確認済み）。WSL 内のファイルは Defender の検査対象外になる＝ISMS の記録としてここに残す |
 | ⑥ | 未追跡9件: PDF2本はコミットか／jpeg 3枚・diff1〜4.txt は削除か | **決定（2026-09-19）**: PDF はコミット、jpeg・diff は削除。ccguide 作業場の `dev.db.bak-20260815` も削除 |
@@ -231,3 +231,4 @@ Office 操作（doc-extract・excel-dynamic-extraction・styled-pptx の描画�
 - 2026-09-19 段階7の文書はすべて更新（em-tech-apps の CLAUDE.md は WSL 側でコミット）。段階6は WSL 側の作業場5つまで作り、**改名だけ松田さんの判断待ち**（旧セッション 09acae92 を閉じる／保険の push／`C:\wt\schedule` の処分）。Docker 検証・本番 ssh も操作待ち。
 - 2026-09-19 12:20 **段階6 完了**（旧セッションと待受端末を閉じる → 保険の push → 改名 → Terminal 整理）。Docker 統合・VS Code 拡張・本番 ssh も確認済み。**残り＝判断③（2026-10-03 以降の削除）と判断⑤（Defender・保留）のみ。判断⑦は 2026-09-19 完了。**
 - 2026-09-19 14:30 **自己点検**（WSL セッション 61ca07d7）: 段階2〜7 の期待動作を実機で確認（リンク16・ブランチ30本一致・作業場5・フック23・型チェック・文言検査・変更通知・`/mnt/key`・Docker・Terminal・資格情報・終了記録）。抜け3件＝ccguide 作業場の `dev.db`・`.claude/settings.local.json`・`.env` 3本の CRLF を直した。
+- 2026-10-07 **判断③ 完了**（松田さんの判断＝退避せずに削除）。削除前に確かめたこと：`C:\wt\*` 5つは未コミット0件・最後のコミットは WSL 側にある／`.env`・`dev.db` は WSL の `~/wt/<名前>` に同じ中身／git でない `C:\wt\schedule` は人が書いたファイルが全部 WSL の履歴にある（WSL に無いのは取り込みの一時ファイル `tmp/imports` 65件だけ）／旧本体2つのブランチ37本の先頭は全部 WSL 側にある・`.env` の違いは書き方と鍵の場所（`/mnt/key`）だけ。削除したもの＝`C:\wt`（約17.6GB）・`dev\em-tech-apps.old-20260919`（約12.4GB）・`dev\apps-platform.old-20260919`。残りは判断⑤（Defender・保留）だけ。
