@@ -18,7 +18,7 @@
 - node_modules に Windows 専用の部品10個 → 両OSで共有不可。pnpm 未導入（corepack で入る）。Playwright の Linux 用ブラウザ未導入。
 - WSL側 `~/.claude` はほぼ空。フックは全部 `python` 起動（WSLに `python` 無し → `python-is-python3` で解決）。全フックは標準ライブラリのみ。固定パス依存は `recall-relevant.py`（`USERPROFILE`）と `session-digest.ps1`（WSL側ログを探せない）。
 - 記憶の置き場がパス表記の違いで別キーになる（`c--Users-m-matsuda-claude-code` vs `-mnt-c-Users-m-matsuda-claude-code`）。`@~/.claude/projects.md` も WSL では解決しない。
-- MCP: Windows 6個 / WSL 0個。obsidian 2本は移植可、mysql は書き直し、email-assistant・browser・travel-browser は不可。
+- MCP: Windows 6個（browser・email-assistant・mysql・obsidian・obsidian-knowledge・travel-browser）/ WSL 0個。自宅PC用 `setup_home_pc.ps1` が登録するのはこのうち4つ（notion・browser・mysql・email-assistant）。notion は会社PCの6個とは別枠で、obsidian 2本・travel-browser は別の手順で登録している。obsidian 2本は移植可、mysql は書き直し、email-assistant・browser・travel-browser は不可。
 - 認証情報は `python.exe` 経由で Windows 資格情報マネージャーに届く（WinVaultKeyring 実測）。`es.exe`・`gh.exe`（ログイン済み）も WSL から呼べる。Git Credential Manager あり。
 - SSH鍵: `/mnt/c` では `chmod` が効かない（`metadata` 未設定）。鍵は 444/777 に見える。
 - Docker Desktop の WSL 統合は未有効（統合ディストロ0件）。VS Code の WSL 拡張は未導入。
@@ -52,7 +52,7 @@
 - [x] WSL側 `~/.claude/projects/-mnt-c-Users-m-matsuda-claude-code/memory` → Windows側 `c--Users-m-matsuda-claude-code/memory` へのリンク
 - [x] 記憶 `project_wsl_migration`・MEMORY.md 索引・承認待ち台帳に記録
 - [x] 引継書 `~/.claude/handoff/wsl-migration.md`
-- [ ] （運用）段階1が終わるまで WSL から `git add` を打たない
+- [x] （運用）段階1が終わるまで WSL から `git add` を打たない（段階1完了の 2026-09-19 に解除。ただし作業場では段階1のあとも不可＝段階1の注記）
 
 ## 段階1: 改行対策 ✅ 2026-09-19 完了
 
@@ -74,7 +74,7 @@ WSL側は `wsl -d Ubuntu -u root -- bash <script>`（管理者）／`wsl -d Ubun
 - [x] `apt install python-is-python3 python3-pip gh` → Python 3.14.4／pip 25.1.1／gh 2.46.0
 - [x] `~/.profile` の末尾に nvm の3行 → `bash -lc` で node 22.23.2・corepack・pnpm が nvm 側になった
 - [x] claude: 公式インストーラ → `~/.local/bin/claude`（2.1.277）→ `/usr/local/bin/claude` にリンク → `bash -c "claude --version"` も Linux 版。nvm 内の npm 版は `npm uninstall -g` で撤去
-- [x] git（通常ユーザー）: user.name／user.email／`core.quotepath false`／`credential.helper` = Windows の GCM／`~/.config/git/ignore` を Windows と同じ内容で作成 → `git ls-remote` で非公開リポジトリに認証付きで届いた
+- [x] git（通常ユーザー）: user.name＝`m-matsuda`／user.email＝`61611032+masahiro-matsuda@users.noreply.github.com`（会社PCは Windows・WSL とも同じ値。`setup_wsl.sh` の既定と同じ）／`core.quotepath false`／`credential.helper` = Windows の GCM／`~/.config/git/ignore` を Windows と同じ内容で作成 → `git ls-remote` で非公開リポジトリに認証付きで届いた
 - [x] gh: `gh auth login --with-token` は**トークンを `~/.config/gh/hosts.yml` に平文で保存する**（ルール20 に反する）ので取りやめ。代わりに `~/.profile` で毎回 `gh.exe auth token` の出力を `GH_TOKEN` に載せる（ファイルに残らない）。`gh auth status` は「GH_TOKEN でログイン済み」
 - [x] `corepack enable && corepack prepare pnpm@9.15.4 --activate` → pnpm 9.15.4
 - [x] `~/.ssh/config`: ONE／cybozu-archive／apps.em-tech.co.jp（`emtech@153.127.65.67`・apps-prod-deploy-playbook の接続先）。`known_hosts` を写した
@@ -87,6 +87,8 @@ WSL側は `wsl -d Ubuntu -u root -- bash <script>`（管理者）／`wsl -d Ubun
 ## 段階3: Claude Code 設定の1本化 ✅ 2026-09-19 完了（3-4 の Terminal は段階4の複製後）
 
 ### 3-1. リンク（WSL側 → Windows側）✅
+
+段階0で作った `projects/-mnt-c-Users-m-matsuda-claude-code/memory` のリンクは下の表に載っていない（`setup_wsl.sh` も作らない）。段階3で不要になったのか残すのかは**未確認**。
 
 | WSL側 | → Windows側 | 理由 |
 |---|---|---|
@@ -120,10 +122,10 @@ WSL側の元の `settings.json`（Fable 5.1・opus xhigh・theme dark）は `set
 - [x] WSL 側で全フックを試験入力で起動 → 全部動いた（サブエージェントのモデル未指定を止める判定 rc=2 も期待どおり）
 - [ ] （任意・見送り）obsidian MCP 2本の WSL 登録。記憶の読み書きはファイル経由なので無くても動く
 
-### 3-4. Windows Terminal（`~/.claude/tools/claude-shortcuts.ps1 add`）— 段階4の複製後に実施
+### 3-4. Windows Terminal（`~/.claude/tools/claude-shortcuts.ps1 add`）✅ 段階4の複製後に実施済み
 
-- [ ] 「Claude: em-tech-apps（WSL）」: `-Path \\wsl.localhost\Ubuntu\home\m-matsuda\dev\em-tech-apps` `-Command 'wsl.exe -d Ubuntu --cd /home/m-matsuda/dev/em-tech-apps -- bash -lc "claude; exec bash -i"'`（`-lc`＝ログインシェルで `~/.profile` の nvm を読む。`-c` だと node・pnpm が apt 側になる）
-- [ ] 「Claude: アプリ質問対応（速い・WSL）」: 同上に `claude --model sonnet`
+- [x] 「Claude: em-tech-apps（WSL）」（段階4で追加）: `-Path \\wsl.localhost\Ubuntu\home\m-matsuda\dev\em-tech-apps` `-Command 'wsl.exe -d Ubuntu --cd /home/m-matsuda/dev/em-tech-apps -- bash -lc "claude; exec bash -i"'`（`-lc`＝ログインシェルで `~/.profile` の nvm を読む。`-c` だと node・pnpm が apt 側になる）
+- [x] 「Claude: アプリ質問対応（速い・WSL）」（段階4で追加）: 同上に `claude --model sonnet`
 - [x] 既存の PowerShell 版「Claude: em-tech-apps」「Claude: アプリ質問対応（速い）」を `remove`（段階6・2026-09-19）
 - [ ] 親フォルダ用の WSL プロファイルは作らない（業務系は PowerShell の役割）
 
@@ -145,7 +147,7 @@ WSL側の元の `settings.json`（Fable 5.1・opus xhigh・theme dark）は `set
 - [x] 作業場（`C:\wt\*`）は段階6の改名まで Windows 側でそのまま使える。WSL で必要になったら `git worktree add ~/wt/<name> <branch>`。`C:\wt\schedule` の残骸は段階6で削除
 - [x] Windows Terminal に「Claude: em-tech-apps（WSL）」「Claude: アプリ質問対応（速い・WSL）」を追加（3-4）。`claude-shortcuts.ps1 add` は UNC パスに PowerShell の接頭辞 `Microsoft.PowerShell.Core\FileSystem::` を付けてしまうので、追加後に settings.json を直接直した（控え `settings.json.bak-wslfix-20260919`）
 
-## 段階5: 動作検証（全部通るまで段階6に進まない）
+## 段階5: 動作検証 ✅ 2026-09-19 完了（全部通るまで段階6に進まない）
 
 無人で確かめられるものは PowerShell 側から `claude -p` で実施済み（2026-09-19）。対話でしか見えないもの（ステータス行の表示・Terminal のプロファイルからの起動感）は松田さんが WSL プロファイルを開いたときに見る。
 
@@ -162,19 +164,19 @@ WSL側の元の `settings.json`（Fable 5.1・opus xhigh・theme dark）は `set
 - [x] Playwright: Chromium 148 が起動する（`PLAYWRIGHT_HOST_PLATFORM_OVERRIDE`）
 - [x] 同期チェック `lib/git-sync-status.ps1`: WSL 側 `~/dev/*` も「<名前> (WSL)」として表に出る（git は WSL の中で実行。`*.old-*` は除外）＝段階6・7の項目を前倒しで実施・コミット `8bf3732`
 
-## 段階6: 切替・後始末（2026-09-19 着手。改名は松田さんの判断待ち）
+## 段階6: 切替・後始末 ✅ 2026-09-19 改名まで完了（Windows 側の写しの削除は 2026-10-07）
 
 - [x] `lib/git-sync-status.ps1` の走査から `*.old-*` を除外（段階5で前倒し）
 - [x] 切替の前提確認: ブランチは Windows・WSL とも全30本（apps-platform 7本）が同じコミット／作業場5つは未コミット 0
 - [x] **WSL 側に作業場5つを作り直した**（`~/wt/board|ccguide|kintai|kintai-leave|tasks-satellite`。各作業場の `.env`・`prisma/dev.db` を Windows 側から写し、`pnpm install`・`prisma generate` 済み・差分 0）。**Windows 側の作業場は畳まず残す**（改名で壊れるが、2週間の冷却の写しとして置き、削除は冷却後にまとめて）。**2026-09-19 自己点検**: ccguide の作業場だけ `prisma/dev.db` が写っていなかった → Windows 側の作業場の 8/29 版（`securityVersion` 列あり）を写した
 - [x] 改名の前提: 旧セッション 09acae92（claude 26816＋子孫28本）を松田さんの承認で終了。**その親の端末 pwsh（`-NoExit -Command claude`）が待受のまま残ってフォルダを掴んでいた**（コマンドラインには出ない）→ これも閉じて改名が通った
 - [x] `C:\wt\schedule` は「残骸」ではなかった（9/18 14:00 に更新あり・git 管理外）→ **残す**（2026-09-19 決定。冷却後に他の写しと一緒に見直す）
-- [ ] **改名の前に Windows 側の作業場5つを畳む**: 各作業場が clean（`git status`）で、そのブランチが WSL 側にある（`git -C ~/dev/em-tech-apps branch --list <branch>`）ことを確認 → `git worktree remove C:\wt\<name>`。作業場の `.git` は `dev/em-tech-apps/.git/worktrees/…` を指しているので、先に改名すると5つとも「git のリポジトリではない」になる
+- [x] ~~改名の前に Windows 側の作業場5つを畳む~~ → 実際は畳まずに改名し、作業場は冷却中の写しとして残して 2026-10-07 に `C:\wt` ごと削除した（下の判断③）。当初の手順: 各作業場が clean（`git status`）で、そのブランチが WSL 側にある（`git -C ~/dev/em-tech-apps branch --list <branch>`）ことを確認 → `git worktree remove C:\wt\<name>`。作業場の `.git` は `dev/em-tech-apps/.git/worktrees/…` を指しているので、先に改名すると5つとも「git のリポジトリではない」になる
 - [x] Windows側 `dev\em-tech-apps` に `MOVED_TO_WSL.md` を置き `em-tech-apps.old-20260919` に改名（2026-09-19 12:20）。Windows 側の作業場5つは想定どおり「not a git repository」＝WSL 側 `~/wt/*` を使う
 - [x] 2週間の冷却（**2026-10-03 以降**。2026-10-07 実施）→ 問題なければ `em-tech-apps.old-20260919`・`apps-platform.old-20260919`・`C:\wt\board|ccguide|kintai|kintai-leave|tasks-satellite` を削除（親 CLAUDE.md の手順: node 停止 → GitHub 同期確認 → `Remove-Item`）。判断③。`C:\wt\schedule` はそのとき中身を見て決める
 - [x] apps-platform も `apps-platform.old-20260919` に改名（`MOVED_TO_WSL.md` あり）。`C:\wt\schedule` は残す（上記）
 
-## 段階7: 文書・記憶・自宅PC
+## 段階7: 文書・記憶・自宅PC ✅ 2026-09-19 完了
 
 - [x] グローバル `CLAUDE.md`: 「10. WSL／PowerShell の役割分担（ルール25）」を追加。ルール20B に `/mnt/key`、ルール22 に `MSYS_NO_PATHCONV` と WSL の `quotepath`（2026-09-19）
 - [x] `projects.md`: em-tech-apps 配下の3行を `~/dev/em-tech-apps/apps/...`（WSL）に、冒頭に UNC の読み方を追記
@@ -186,7 +188,16 @@ WSL側の元の `settings.json`（Fable 5.1・opus xhigh・theme dark）は `set
 - [x] `settings.json` の autoMode 本文: 鍵に `/mnt/key/` を併記、Web開発は WSL の旨を追記
 - [x] 記憶: `project_wsl_migration`（今日の到達点と、ぶつかって直した点）・`reference_pwsh_terminal_setup`（WSL プロファイル2つ）を更新。`apps-prod-deploy-playbook`（WSL から打つ場合）・`project_status_board` は切替（段階6）後に
 - [x] スキル: `git-sync`・`obsidian-memory`・`weekly-review`・`session-handoff` の末尾に「WSL 併用時の注意」を追記
-- [x] `claude-setup/setup_wsl.sh`（root / user の2段で段階2〜3を再現。自宅PC用＝判断②）
+- [x] `claude-setup/setup_wsl.sh`（root / user の2段で、段階2〜3の WSL 側の設定に加え、段階4の一部＝linger と Playwright の環境変数を再現。自宅PC用＝判断②）
+
+### 自宅PCで使うスクリプトの範囲
+
+- `setup_home_pc.ps1`（PowerShell）: Windows 側の下ごしらえ。winget で Git・Node・Python・gh、npm で claude、git 設定（`core.autocrlf true`）、`claude-config` を `~/.claude` へ、7リポジトリの複製（em-tech-apps・apps-platform は含まない＝WSL 側で段階4）、MCP 4つの登録、鍵フォルダ `C:\Data\key\sakura_sys.em-tech.co.jp` の作成、資格情報の登録、`.env` 生成。**スクリプト側の未修正の差**: git の user.name が `Masahiro Matsuda` になっている（実態は `m-matsuda`）。
+- `setup_wsl.sh`（root → user の順）: 上の通り。前提として、Windows 側に `~/.claude`・`~/claude code`・Git for Windows（GCM）・gh（ログイン済み、`C:\Program Files\GitHub CLI\gh.exe`）・Python（keyring）があること、WSL に nvm と Node 22 が**先に**入っていること（`nvm install 22`。スクリプトは入れずに止まる）。
+- `check_setup.ps1`: Windows 側だけの確認（WSL 側の確認はない。WSL 側は段階5を手で）。
+- **スクリプトではやらない（手動）**: Docker Desktop の WSL 統合、VS Code の WSL 拡張、`~/.ssh/config`（IdentityFile は `/mnt/key/...`）、Playwright の Chromium 導入（root で `install-deps chromium`、通常ユーザーで `install chromium`）、Windows Terminal の WSL プロファイル、Defender の除外（判断⑤）、段階4のリポジトリ複製以降。
+- 注意: `/etc/wsl.conf` に `[automount]` が既にあると、`setup_wsl.sh` は `metadata` を足さない。
+- **未確認**: `setup_wsl.sh` の冪等性、`systemd-run --user` に要る systemd が自宅PCの Ubuntu で有効か、gh.exe・GCM のパスが自宅PCでも同じか。
 
 ## Windows に残すもの（WSL では動かない・動かさない）
 
@@ -214,7 +225,7 @@ Office 操作（doc-extract・excel-dynamic-extraction・styled-pptx の描画�
 
 ## 戻し方
 
-段階0〜3: WSL 側のリンクを消し `settings.json` を元に戻す。Windows 側の `settings.json` の修正は Windows でも通る形（段階5で確認）。段階4〜6: 冷却中は Windows 側の写しが残っているので改名を戻す。`wsl.conf`: 1行消して `wsl --shutdown`。`.gitattributes`: ファイルを消してコミット。
+段階0〜3: WSL 側のリンクを消し `settings.json` を元に戻す。Windows 側の `settings.json` の修正は Windows でも通る形（段階5で確認）。段階4〜6: 冷却中は Windows 側の写しが残っているので改名を戻す。`wsl.conf`: 1行消して `wsl --terminate Ubuntu`。`.gitattributes`: ファイルを消してコミット。
 
 ## 検証済み／適用時に確認
 
@@ -229,6 +240,6 @@ Office 操作（doc-extract・excel-dynamic-extraction・styled-pptx の描画�
 - 2026-09-19 段階1〜3 完了（段階2の Docker 統合・VS Code 拡張は松田さんの操作待ち、3-4 の Terminal は段階4の複製後）。
 - 2026-09-19 段階4・5（無人で確かめられる分）完了。段階7のうち切替に依らない文書（グローバル CLAUDE.md・スキル4本・記憶・setup_wsl.sh）も完了。残り＝松田さんの操作4件 → 段階5の Docker 検証 → 段階6 → 段階7の残り（パスを書き換える文書）。
 - 2026-09-19 段階7の文書はすべて更新（em-tech-apps の CLAUDE.md は WSL 側でコミット）。段階6は WSL 側の作業場5つまで作り、**改名だけ松田さんの判断待ち**（旧セッション 09acae92 を閉じる／保険の push／`C:\wt\schedule` の処分）。Docker 検証・本番 ssh も操作待ち。
-- 2026-09-19 12:20 **段階6 完了**（旧セッションと待受端末を閉じる → 保険の push → 改名 → Terminal 整理）。Docker 統合・VS Code 拡張・本番 ssh も確認済み。**残り＝判断③（2026-10-03 以降の削除）と判断⑤（Defender・保留）のみ。判断⑦は 2026-09-19 完了。**
+- 2026-09-19 12:20 **段階6 完了**（旧セッションと待受端末を閉じる → 保険の push → 改名 → Terminal 整理）。Docker 統合・VS Code 拡張・本番 ssh も確認済み。**残り＝判断③（2026-10-03 以降の削除）のみ（判断⑤の Defender 除外は 2026-09-19 に実施済み）。判断⑦は 2026-09-19 完了。**
 - 2026-09-19 14:30 **自己点検**（WSL セッション 61ca07d7）: 段階2〜7 の期待動作を実機で確認（リンク16・ブランチ30本一致・作業場5・フック23・型チェック・文言検査・変更通知・`/mnt/key`・Docker・Terminal・資格情報・終了記録）。抜け3件＝ccguide 作業場の `dev.db`・`.claude/settings.local.json`・`.env` 3本の CRLF を直した。
-- 2026-10-07 **判断③ 完了**（松田さんの判断＝退避せずに削除）。削除前に確かめたこと：`C:\wt\*` 5つは未コミット0件・最後のコミットは WSL 側にある／`.env`・`dev.db` は WSL の `~/wt/<名前>` に同じ中身／git でない `C:\wt\schedule` は人が書いたファイルが全部 WSL の履歴にある（WSL に無いのは取り込みの一時ファイル `tmp/imports` 65件だけ）／旧本体2つのブランチ37本の先頭は全部 WSL 側にある・`.env` の違いは書き方と鍵の場所（`/mnt/key`）だけ。削除したもの＝`C:\wt`（約17.6GB）・`dev\em-tech-apps.old-20260919`（約12.4GB）・`dev\apps-platform.old-20260919`。残りは判断⑤（Defender・保留）だけ。
+- 2026-10-07 **判断③ 完了**（松田さんの判断＝退避せずに削除）。削除前に確かめたこと：`C:\wt\*` 5つは未コミット0件・最後のコミットは WSL 側にある／`.env`・`dev.db` は WSL の `~/wt/<名前>` に同じ中身／git でない `C:\wt\schedule` は人が書いたファイルが全部 WSL の履歴にある（WSL に無いのは取り込みの一時ファイル `tmp/imports` 65件だけ）／旧本体2つのブランチ37本の先頭は全部 WSL 側にある・`.env` の違いは書き方と鍵の場所（`/mnt/key`）だけ。削除したもの＝`C:\wt`（約17.6GB）・`dev\em-tech-apps.old-20260919`（約12.4GB）・`dev\apps-platform.old-20260919`。残りの判断はなし（判断⑤は 2026-09-19 に除外済み）。
